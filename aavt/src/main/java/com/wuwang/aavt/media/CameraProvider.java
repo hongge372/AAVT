@@ -36,8 +36,8 @@ import java.util.concurrent.Semaphore;
 public class CameraProvider implements ITextureProvider {
 
     private Camera mCamera;
-    private int cameraId=1;
-    private int minWidth = 640;
+    private int cameraId=0;
+    private int minWidth = 720;
     private float rate = 1.67f;
     private Semaphore mFrameSem;
     private String tag=getClass().getSimpleName();
@@ -92,6 +92,10 @@ public class CameraProvider implements ITextureProvider {
                     }
                 }
             }
+        }
+        List<String> mode = param.getSupportedFocusModes();
+        if(mode.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)){
+            param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         }
         mCamera.setParameters(param);
     }

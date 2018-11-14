@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.wuwang.aavt.av.CameraRecorder2;
+import com.wuwang.aavt.av.SurfaceRecorder;
 import com.wuwang.aavt.gl.BaseFilter;
 import com.wuwang.aavt.gl.BeautyFilter;
 import com.wuwang.aavt.gl.BlackMagicFilter;
@@ -24,6 +25,8 @@ import com.wuwang.aavt.gl.GroupFilter;
 import com.wuwang.aavt.gl.LazyFilter;
 import com.wuwang.aavt.gl.StickFigureFilter;
 import com.wuwang.aavt.gl.WaterMarkFilter;
+import com.wuwang.aavt.media.Camera2Provider;
+import com.wuwang.aavt.media.CameraProvider;
 import com.wuwang.aavt.utils.MatrixUtils;
 
 public class CameraRecorderActivity extends AppCompatActivity{
@@ -34,7 +37,7 @@ public class CameraRecorderActivity extends AppCompatActivity{
     private boolean isRecordOpen=false;
     private int mCameraWidth,mCameraHeight;
 
-    private CameraRecorder2 mCamera;
+    private SurfaceRecorder mCamera;
 
     private String tempPath= Environment.getExternalStorageDirectory().getAbsolutePath()+"/test.mp4";
 
@@ -46,7 +49,8 @@ public class CameraRecorderActivity extends AppCompatActivity{
         mTvRecord= (TextView) findViewById(R.id.mTvRec);
         mTvPreview= (TextView) findViewById(R.id.mTvShow);
 
-        mCamera =new CameraRecorder2();
+        mCamera =new SurfaceRecorder(getApplicationContext());
+        mCamera.setRecordSize(368,640);
         mCamera.setOutputPath(tempPath);
 
         mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
@@ -61,9 +65,9 @@ public class CameraRecorderActivity extends AppCompatActivity{
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                mCamera.open();
                 mCamera.setSurface(holder.getSurface());
                 mCamera.setPreviewSize(width, height);
+                mCamera.open();
                 mCamera.startPreview();
                 isPreviewOpen=true;
             }

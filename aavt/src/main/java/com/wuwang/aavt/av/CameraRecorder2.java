@@ -13,7 +13,10 @@
  */
 package com.wuwang.aavt.av;
 
+import android.content.Context;
+
 import com.wuwang.aavt.core.Renderer;
+import com.wuwang.aavt.media.Camera2Provider;
 import com.wuwang.aavt.media.CameraProvider;
 import com.wuwang.aavt.media.ITextureProvider;
 import com.wuwang.aavt.media.SurfaceEncoder;
@@ -41,7 +44,7 @@ public class CameraRecorder2 {
 
     private SoundRecorder mSoundRecord;
 
-    public CameraRecorder2(){
+    public CameraRecorder2(Context context){
         //用于视频混流和存储
         mMuxer=new StrengthenMp4MuxStore(true);
 
@@ -58,7 +61,7 @@ public class CameraRecorder2 {
 
         //用于处理视频图像
         mTextureProcessor=new VideoSurfaceProcessor();
-        mTextureProcessor.setTextureProvider(mCameraProvider=new CameraProvider());
+        mTextureProcessor.setTextureProvider(mCameraProvider=new Camera2Provider(context));
         mTextureProcessor.addObserver(mShower);
         mTextureProcessor.addObserver(mSurfaceStore);
     }
