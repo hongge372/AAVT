@@ -34,6 +34,7 @@ import com.wuwang.aavt.utils.GpuUtils;
 
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glFinish;
 
 /**
  * VideoSurfaceProcessor 视频流图像处理类，以{@link ITextureProvider}作为视频流图像输入。通过设置{@link IObserver}
@@ -80,7 +81,7 @@ public class VideoSurfaceProcessor{
                     //todo 错误处理
                     return;
                 }
-                sharedTextureId = GpuUtils.createTextureID(true);
+                sharedTextureId = GpuUtils.createTextureID(false);
                 Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
                 WrapRenderer sharedRenderer = null;
                 if(sharedRenderer==null){
@@ -99,9 +100,12 @@ public class VideoSurfaceProcessor{
                             e.printStackTrace();
                         }
                     }
+                    GLES20.glViewport(0,0, 720, 1280);
+
                     //sharedRenderer.draw(sharedTextureId);
                     String path = "/sdcard/VideoEdit/pic/father_" + rundererSaveIndex++ + ".png";
-                    LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path);
+                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
+                   // glFinish();
                     canSave =0;
                 }
             }
@@ -207,6 +211,11 @@ public class VideoSurfaceProcessor{
             AvLog.d(TAG,"timestamp:"+ mInputSurfaceTexture.getTimestamp());
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
             GLES20.glViewport(0,0, mSourceWidth, mSourceHeight);
+
+            if(sharedTextureId>0){
+                mRenderer.draw(sharedTextureId);
+            }
+            mRenderer.draw(mInputSurfaceTextureId);
             canSave=1;
             while (canSave==1){
                 try {
@@ -216,12 +225,8 @@ public class VideoSurfaceProcessor{
                 }
             }
             String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
-            //LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
-            if(sharedTextureId>0){
-                mRenderer.draw(sharedTextureId);
-            }
-            mRenderer.draw(mInputSurfaceTextureId);
-
+            LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
+            //glFinish();
             sourceFrame.unBindFrameBuffer();
             rb.textureId=sourceFrame.getCacheTextureId();
             //接收数据源传入的时间戳
