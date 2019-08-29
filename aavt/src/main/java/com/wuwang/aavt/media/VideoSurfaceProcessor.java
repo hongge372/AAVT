@@ -59,6 +59,7 @@ public class VideoSurfaceProcessor{
     private int mInputSurfaceTextureId;
     private int canSave=0;
     private int sharedTextureId =-1;
+    FrameBuffer sourceFrame=new FrameBuffer();
 
     public VideoSurfaceProcessor(){
         observable=new Observable<>();
@@ -83,14 +84,6 @@ public class VideoSurfaceProcessor{
                 }
                 sharedTextureId = GpuUtils.createTextureID(false);
                 Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
-                WrapRenderer sharedRenderer = null;
-                if(sharedRenderer==null){
-                    sharedRenderer=new WrapRenderer(null);
-                }
-                FrameBuffer sourceFrame=new FrameBuffer();
-                sharedRenderer.create();
-                sharedRenderer.sizeChanged(720, 1280);
-                sharedRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
 
                 while (true){
                     while (canSave==0){
@@ -100,11 +93,12 @@ public class VideoSurfaceProcessor{
                             e.printStackTrace();
                         }
                     }
-                    GLES20.glViewport(0,0, 720, 1280);
+                    sharedEgl.makeCurrent();
+                    //GLES20.glViewport(0,0, 720, 1280);
 
                     //sharedRenderer.draw(sharedTextureId);
                     String path = "/sdcard/VideoEdit/pic/father_" + rundererSaveIndex++ + ".png";
-                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
+                    LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path);
                    // glFinish();
                     canSave =0;
                 }
@@ -191,7 +185,6 @@ public class VideoSurfaceProcessor{
         if(mRenderer==null){
             mRenderer=new WrapRenderer(null);
         }
-        FrameBuffer sourceFrame=new FrameBuffer();
         mRenderer.create();
         mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
         mRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
@@ -224,15 +217,19 @@ public class VideoSurfaceProcessor{
                     e.printStackTrace();
                 }
             }
+            String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
+            LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
+
             String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
             LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
+            //sharedEgl.makeCurrent();
             //glFinish();
             sourceFrame.unBindFrameBuffer();
-            rb.textureId=sourceFrame.getCacheTextureId();
-            //接收数据源传入的时间戳
-            rb.timeStamp=mProvider.getTimeStamp();
-            rb.textureTime= mInputSurfaceTexture.getTimestamp();
-            observable.notify(rb);
+//            rb.textureId=sourceFrame.getCacheTextureId();
+//            //接收数据源传入的时间戳
+//            rb.timeStamp=mProvider.getTimeStamp();
+//            rb.textureTime= mInputSurfaceTexture.getTimestamp();
+//            observable.notify(rb);
         }
         AvLog.d(TAG,"out of gl thread loop");
         synchronized (LOCK){
