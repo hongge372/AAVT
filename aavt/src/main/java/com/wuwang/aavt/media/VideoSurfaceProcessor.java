@@ -29,7 +29,11 @@ import com.wuwang.aavt.egl.EGLContextAttrs;
 import com.wuwang.aavt.egl.EglHelper;
 import com.wuwang.aavt.gl.FrameBuffer;
 import com.wuwang.aavt.log.AvLog;
+import com.wuwang.aavt.media.hard.LVTextureSave;
 import com.wuwang.aavt.utils.GpuUtils;
+
+import static android.opengl.GLES20.GL_TEXTURE_2D;
+import static android.opengl.GLES20.glBindTexture;
 
 /**
  * VideoSurfaceProcessor 视频流图像处理类，以{@link ITextureProvider}作为视频流图像输入。通过设置{@link IObserver}
@@ -50,9 +54,58 @@ public class VideoSurfaceProcessor{
     private final Object LOCK=new Object();
 
     private ITextureProvider mProvider;
+    private EglHelper egl, sharedEgl;
+    private int mInputSurfaceTextureId;
+    private int canSave=0;
+    private int sharedTextureId =-1;
 
     public VideoSurfaceProcessor(){
         observable=new Observable<>();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (EglHelper.shareContex == null){
+                    //Log.v(TAG, "share opengl stu, shareContex is null");
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Log.v(TAG, "share opengl stu, shareContex has data");
+                sharedEgl=new EglHelper();
+                boolean ret=sharedEgl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),new SurfaceTexture(1));
+                if(!ret){
+                    //todo 错误处理
+                    return;
+                }
+                sharedTextureId = GpuUtils.createTextureID(true);
+                Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
+                WrapRenderer sharedRenderer = null;
+                if(sharedRenderer==null){
+                    sharedRenderer=new WrapRenderer(null);
+                }
+                FrameBuffer sourceFrame=new FrameBuffer();
+                sharedRenderer.create();
+                sharedRenderer.sizeChanged(720, 1280);
+                sharedRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
+
+                while (true){
+                    while (canSave==0){
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    //sharedRenderer.draw(sharedTextureId);
+                    String path = "/sdcard/VideoEdit/pic/father_" + rundererSaveIndex++ + ".png";
+                    LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path);
+                    canSave =0;
+                }
+            }
+        }).start();
     }
 
     public void setTextureProvider(ITextureProvider provider){
@@ -101,13 +154,13 @@ public class VideoSurfaceProcessor{
     }
 
     private void glRun(){
-        EglHelper egl=new EglHelper();
+         egl=new EglHelper();
         boolean ret=egl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),new SurfaceTexture(1));
         if(!ret){
             //todo 错误处理
             return;
         }
-        int mInputSurfaceTextureId = GpuUtils.createTextureID(true);
+         mInputSurfaceTextureId = GpuUtils.createTextureID(true);
         SurfaceTexture mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
 
         Point size=mProvider.open(mInputSurfaceTexture);
@@ -154,7 +207,21 @@ public class VideoSurfaceProcessor{
             AvLog.d(TAG,"timestamp:"+ mInputSurfaceTexture.getTimestamp());
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
             GLES20.glViewport(0,0, mSourceWidth, mSourceHeight);
+            canSave=1;
+            while (canSave==1){
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
+            //LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
+            if(sharedTextureId>0){
+                mRenderer.draw(sharedTextureId);
+            }
             mRenderer.draw(mInputSurfaceTextureId);
+
             sourceFrame.unBindFrameBuffer();
             rb.textureId=sourceFrame.getCacheTextureId();
             //接收数据源传入的时间戳
@@ -172,6 +239,7 @@ public class VideoSurfaceProcessor{
             AvLog.d(TAG,"gl thread exit");
         }
     }
+    private int rundererSaveIndex = 0;
 
     private void destroyGL(EglHelper egl){
         mGLThreadFlag=false;

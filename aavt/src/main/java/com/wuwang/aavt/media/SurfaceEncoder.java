@@ -52,7 +52,7 @@ public class SurfaceEncoder extends SurfaceShower{
         super.setOnDrawEndListener(new OnDrawEndListener() {
             @Override
             public void onDrawEnd(EGLSurface surface, RenderBean bean) {
-                AvLog.d(TAG,"onDrawEnd start-->");
+                //AvLog.d(TAG,"onDrawEnd start-->");
                 if(bean.timeStamp!=-1){
                     bean.egl.setPresentationTime(surface,bean.timeStamp*1000);
                 }else{
@@ -62,7 +62,7 @@ public class SurfaceEncoder extends SurfaceShower{
                     bean.egl.setPresentationTime(surface,bean.textureTime-startTime);
                 }
                 videoEncodeStep(false);
-                AvLog.e(TAG,"onDrawEnd end-->");
+                //AvLog.e(TAG,"onDrawEnd end-->");
                 if(mListener!=null){
                     mListener.onDrawEnd(surface,bean);
                 }

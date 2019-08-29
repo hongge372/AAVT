@@ -11,6 +11,7 @@ import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
+import com.wuwang.aavt.egl.EglHelper;
 import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.media.av.AvException;
 import com.wuwang.aavt.media.hard.HardMediaData;
@@ -52,7 +53,20 @@ public class Mp4Provider implements ITextureProvider {
     private long mVideoTotalTime=-1;
 
     public Mp4Provider(){
-
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (EglHelper.shareContex == null){
+                    //Log.v(tag, "share opengl stu, shareContex is null");
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Log.v(tag, "share opengl stu, shareContex has data");
+            }
+        }).start();
     }
 
     public void setInputPath(String path){
