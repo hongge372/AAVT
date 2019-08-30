@@ -129,7 +129,11 @@ public class EglHelper {
             log("createContext failed : " + EGL14.eglGetError());
             return false;
         }
-        mEGLSurface = createWindowSurface(surface);
+        if(shareContex!=null){
+            mEGLSurface = createPBufferSurface( config, 720, 1280);
+        }else {
+            mEGLSurface = createWindowSurface(surface);
+        }
         if (mEGLSurface == EGL14.EGL_NO_SURFACE) {
             log("createWindowSurface failed : " + EGL14.eglGetError());
             return false;

@@ -32,9 +32,11 @@ import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.media.hard.LVTextureSave;
 import com.wuwang.aavt.utils.GpuUtils;
 
+import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glFinish;
+import static android.opengl.GLES20.glTexImage2D;
 
 /**
  * VideoSurfaceProcessor 视频流图像处理类，以{@link ITextureProvider}作为视频流图像输入。通过设置{@link IObserver}
@@ -60,6 +62,8 @@ public class VideoSurfaceProcessor{
     private int canSave=0;
     private int sharedTextureId =-1;
     FrameBuffer sourceFrame=new FrameBuffer();
+    private SurfaceTexture mInputSurfaceTexture;
+    private SurfaceTexture forEglSurfaceTexture = new SurfaceTexture(1);
 
     public VideoSurfaceProcessor(){
         observable=new Observable<>();
@@ -67,17 +71,9 @@ public class VideoSurfaceProcessor{
         new Thread(new Runnable() {
             @Override
             public void run() {
-                while (EglHelper.shareContex == null){
-                    //Log.v(TAG, "share opengl stu, shareContex is null");
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                Log.v(TAG, "share opengl stu, shareContex has data");
+                Log.v(TAG, "share opengl stu, not shareContex has data");
                 sharedEgl=new EglHelper();
-                boolean ret=sharedEgl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),new SurfaceTexture(1));
+                boolean ret=sharedEgl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),forEglSurfaceTexture);
                 if(!ret){
                     //todo 错误处理
                     return;
@@ -95,7 +91,7 @@ public class VideoSurfaceProcessor{
                     }
                     sharedEgl.makeCurrent();
                     //GLES20.glViewport(0,0, 720, 1280);
-
+                    mRenderer.draw(sharedTextureId);
                     //sharedRenderer.draw(sharedTextureId);
                     String path = "/sdcard/VideoEdit/pic/father_" + rundererSaveIndex++ + ".png";
                     LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path);
@@ -152,14 +148,23 @@ public class VideoSurfaceProcessor{
     }
 
     private void glRun(){
-         egl=new EglHelper();
-        boolean ret=egl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),new SurfaceTexture(1));
+        while (EglHelper.shareContex == null){
+            //Log.v(TAG, "share opengl stu, shareContex is null");
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        Log.v(TAG, "share opengl stu, --shareContex has data");
+        egl=new EglHelper();
+        boolean ret=egl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),forEglSurfaceTexture);
         if(!ret){
             //todo 错误处理
             return;
         }
          mInputSurfaceTextureId = GpuUtils.createTextureID(true);
-        SurfaceTexture mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
+         mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
 
         Point size=mProvider.open(mInputSurfaceTexture);
         AvLog.d(TAG,"Provider Opened . data size (x,y)="+size.x+"/"+size.y);
@@ -209,27 +214,30 @@ public class VideoSurfaceProcessor{
                 mRenderer.draw(sharedTextureId);
             }
             mRenderer.draw(mInputSurfaceTextureId);
-            canSave=1;
+
+            String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
+            LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
+
+            //sharedEgl.makeCurrent();
+            //glFinish();
+            sourceFrame.unBindFrameBuffer();
+            rb.textureId=sourceFrame.getCacheTextureId();
+            //接收数据源传入的时间戳
+            rb.timeStamp=mProvider.getTimeStamp();
+            rb.textureTime= mInputSurfaceTexture.getTimestamp();
+            sharedTextureId = rb.textureId;
+            canSave = 1;
             while (canSave==1){
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(1);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-            String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
-            LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
-
             String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
-            LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
-            //sharedEgl.makeCurrent();
-            //glFinish();
-            sourceFrame.unBindFrameBuffer();
-//            rb.textureId=sourceFrame.getCacheTextureId();
-//            //接收数据源传入的时间戳
-//            rb.timeStamp=mProvider.getTimeStamp();
-//            rb.textureTime= mInputSurfaceTexture.getTimestamp();
-//            observable.notify(rb);
+            LVTextureSave.saveToPng(rb.textureId, 720, 1280, path);
+
+            observable.notify(rb);
         }
         AvLog.d(TAG,"out of gl thread loop");
         synchronized (LOCK){
