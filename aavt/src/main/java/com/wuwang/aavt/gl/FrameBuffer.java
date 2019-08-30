@@ -14,6 +14,7 @@
 package com.wuwang.aavt.gl;
 
 import android.opengl.GLES20;
+import android.util.Log;
 
 /**
  * FrameBuffer 工具类
@@ -22,7 +23,7 @@ import android.opengl.GLES20;
  * @version v1.0 2017:10:31 10:31
  */
 public class FrameBuffer {
-
+    private final String TAG = getClass().getName();
     private int[] mFrameTemp;
     private int lastWidth=0,lastHeight=0;
 
@@ -106,6 +107,7 @@ public class FrameBuffer {
      */
     public int bindFrameBuffer(){
         if(mFrameTemp==null){
+            Log.v(TAG, "stu gl XXXXXXXXXgl errXXXXXXXXXX   bing frame buffer err");
             return -1;
         }
         GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING,mFrameTemp,3);

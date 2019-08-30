@@ -1,8 +1,11 @@
 package com.wuwang.aavt.media.hard;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
+import android.opengl.EGL14;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
@@ -34,25 +37,59 @@ import static android.opengl.GLES20.glTexParameteri;
 public class LVTextureSave {
    // public LVTextureSave(){}
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     public static boolean saveToPng(int texID, int width, int height, String output){
         final String TAG = "LVTextureSave";
         ByteBuffer mPixelBuf;
         mPixelBuf = ByteBuffer.allocateDirect(width * height * 4);
         mPixelBuf.order(ByteOrder.LITTLE_ENDIAN);
-        GLES20.glActiveTexture(texID);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texID);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+//        GLES20.glActiveTexture(texID);
+//        if(EGL14.eglGetError()<0){
+//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+//        }
+//
+//        Log.v(TAG, "bind teximage to save !!!!!!!!!!!!!!!!!!");
+//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texID);
+//        if(EGL14.eglGetError()<0){
+//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+//        }
+//
+//        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+//                GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
+//        if(EGL14.eglGetError()<0){
+//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+//        }
+//
+//        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+//                GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+//        if(EGL14.eglGetError()<0){
+//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+//        }
+//
+//        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+//                GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+//        if(EGL14.eglGetError()<0){
+//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+//        }
+//
+//        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+//                GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+//        if(EGL14.eglGetError()<0){
+//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+//        }
+
         // Attach texture to frame buffer
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texID, 0);
+        if(EGL14.eglGetError()<0){
+            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+        }
+
         mPixelBuf.rewind();
         glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mPixelBuf);
+        if(EGL14.eglGetError()<0){
+            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+        }
+
         BufferedOutputStream bos = null;
         try {
             bos = new BufferedOutputStream(new FileOutputStream(output));

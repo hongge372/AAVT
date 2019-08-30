@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +17,7 @@ import android.annotation.TargetApi;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.util.Log;
@@ -35,6 +36,7 @@ import com.wuwang.aavt.utils.GpuUtils;
 import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glCheckFramebufferStatus;
 import static android.opengl.GLES20.glFinish;
 import static android.opengl.GLES20.glTexImage2D;
 
@@ -46,74 +48,108 @@ import static android.opengl.GLES20.glTexImage2D;
  * @version v1.0 2017:10:27 08:37
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-public class VideoSurfaceProcessor{
+public class VideoSurfaceProcessor {
 
-    private String TAG=getClass().getSimpleName();
+    private String TAG = getClass().getSimpleName();
 
-    private boolean mGLThreadFlag=false;
+    private boolean mGLThreadFlag = false;
     private Thread mGLThread;
-    private WrapRenderer mRenderer;
+    private WrapRenderer mRenderer, sharedRenderer;
     private Observable<RenderBean> observable;
-    private final Object LOCK=new Object();
+    private final Object LOCK = new Object();
 
     private ITextureProvider mProvider;
     private EglHelper egl, sharedEgl;
     private int mInputSurfaceTextureId;
-    private int canSave=0;
-    private int sharedTextureId =-1;
-    FrameBuffer sourceFrame=new FrameBuffer();
+    private int canSave = 0;
+    private int sharedTextureId = -1;
+    FrameBuffer sourceFrame = new FrameBuffer();
     private SurfaceTexture mInputSurfaceTexture;
     private SurfaceTexture forEglSurfaceTexture = new SurfaceTexture(1);
 
-    public VideoSurfaceProcessor(){
-        observable=new Observable<>();
+    public VideoSurfaceProcessor() {
+        observable = new Observable<>();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 Log.v(TAG, "share opengl stu, not shareContex has data");
-                sharedEgl=new EglHelper();
-                boolean ret=sharedEgl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),forEglSurfaceTexture);
-                if(!ret){
+                sharedEgl = new EglHelper();
+                boolean ret = sharedEgl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), forEglSurfaceTexture);
+                if (!ret) {
                     //todo 错误处理
                     return;
                 }
                 sharedTextureId = GpuUtils.createTextureID(false);
-                Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
+                if(EGL14.eglGetError()<0){
+                    Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+                }
 
-                while (true){
-                    while (canSave==0){
+                Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
+                if (sharedRenderer == null) {
+                    sharedRenderer = new WrapRenderer(null);
+                }
+                sharedRenderer.create();
+                sharedRenderer.sizeChanged(720, 1280);
+                sharedRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
+                while (true) {
+                    while (canSave == 0) {
                         try {
                             Thread.sleep(10);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
+                    if(EGL14.eglGetError()<0){
+                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+                    }
+
                     sharedEgl.makeCurrent();
-                    //GLES20.glViewport(0,0, 720, 1280);
-                    mRenderer.draw(sharedTextureId);
+                    if(EGL14.eglGetError()<0){
+                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+                    }
+
+                    GLES20.glActiveTexture(sharedTextureId);
+                    //Log.v(TAG, "bind teximage to save !!!!!!!!!!!!!!!!!!");
+                    //GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, sharedTextureId);
+                    glBindTexture(GL_TEXTURE_2D, sharedTextureId);
+                    //glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+                    if(EGL14.eglGetError()<0){
+                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+                    }
+
+                    sourceFrame.bindFrameBuffer();
+                    //GLES20.glViewport(0, 0, 720, 1280);
                     //sharedRenderer.draw(sharedTextureId);
-                    String path = "/sdcard/VideoEdit/pic/father_" + rundererSaveIndex++ + ".png";
-                    LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path);
-                   // glFinish();
-                    canSave =0;
+                    //sharedRenderer.draw(sharedTextureId);
+                    //GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
+                    if(EGL14.eglGetError()<0){
+                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+                    }
+
+                    String path = "/sdcard/VideoEdit/pic/yaooya_father_" + rundererSaveIndex++ + ".png";
+                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
+                    sourceFrame.unBindFrameBuffer();
+                    EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                    // glFinish();
+                    canSave = 0;
                 }
             }
         }).start();
     }
 
-    public void setTextureProvider(ITextureProvider provider){
-        this.mProvider=provider;
+    public void setTextureProvider(ITextureProvider provider) {
+        this.mProvider = provider;
     }
 
-    public void start(){
-        synchronized (LOCK){
-            if(!mGLThreadFlag){
-                if(mProvider==null){
+    public void start() {
+        synchronized (LOCK) {
+            if (!mGLThreadFlag) {
+                if (mProvider == null) {
                     return;
                 }
-                mGLThreadFlag=true;
-                mGLThread=new Thread(new Runnable() {
+                mGLThreadFlag = true;
+                mGLThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         glRun();
@@ -129,10 +165,10 @@ public class VideoSurfaceProcessor{
         }
     }
 
-    public void stop(){
-        synchronized (LOCK){
-            if(mGLThreadFlag){
-                mGLThreadFlag=false;
+    public void stop() {
+        synchronized (LOCK) {
+            if (mGLThreadFlag) {
+                mGLThreadFlag = false;
                 mProvider.close();
                 try {
                     LOCK.wait();
@@ -143,12 +179,12 @@ public class VideoSurfaceProcessor{
         }
     }
 
-    public void setRenderer(Renderer renderer){
-        mRenderer=new WrapRenderer(renderer);
+    public void setRenderer(Renderer renderer) {
+        mRenderer = new WrapRenderer(renderer);
     }
 
-    private void glRun(){
-        while (EglHelper.shareContex == null){
+    private void glRun() {
+        while (EglHelper.shareContex == null) {
             //Log.v(TAG, "share opengl stu, shareContex is null");
             try {
                 Thread.sleep(10);
@@ -157,104 +193,107 @@ public class VideoSurfaceProcessor{
             }
         }
         Log.v(TAG, "share opengl stu, --shareContex has data");
-        egl=new EglHelper();
-        boolean ret=egl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),forEglSurfaceTexture);
-        if(!ret){
+        egl = new EglHelper();
+        boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), forEglSurfaceTexture);
+        if (!ret) {
             //todo 错误处理
             return;
         }
-         mInputSurfaceTextureId = GpuUtils.createTextureID(true);
-         mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
+        mInputSurfaceTextureId = GpuUtils.createTextureID(true);
+        mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
 
-        Point size=mProvider.open(mInputSurfaceTexture);
-        AvLog.d(TAG,"Provider Opened . data size (x,y)="+size.x+"/"+size.y);
-        if(size.x<=0||size.y<=0){
+        Point size = mProvider.open(mInputSurfaceTexture);
+        AvLog.d(TAG, "Provider Opened . data size (x,y)=" + size.x + "/" + size.y);
+        if (size.x <= 0 || size.y <= 0) {
             //todo 错误处理
             destroyGL(egl);
-            synchronized (LOCK){
+            synchronized (LOCK) {
                 LOCK.notifyAll();
             }
             return;
         }
         int mSourceWidth = size.x;
         int mSourceHeight = size.y;
-        synchronized (LOCK){
+        synchronized (LOCK) {
             LOCK.notifyAll();
         }
         //要求数据源提供者必须同步返回数据大小
-        if(mSourceWidth <=0|| mSourceHeight <=0){
-            error(1,"video source return inaccurate size to SurfaceTextureActuator");
+        if (mSourceWidth <= 0 || mSourceHeight <= 0) {
+            error(1, "video source return inaccurate size to SurfaceTextureActuator");
             return;
         }
 
-        if(mRenderer==null){
-            mRenderer=new WrapRenderer(null);
+        if (mRenderer == null) {
+            mRenderer = new WrapRenderer(null);
         }
         mRenderer.create();
         mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
-        mRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
+        mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
 
         //用于其他的回调
-        RenderBean rb=new RenderBean();
-        rb.egl=egl;
-        rb.sourceWidth= mSourceWidth;
-        rb.sourceHeight= mSourceHeight;
-        rb.endFlag=false;
-        rb.threadId=Thread.currentThread().getId();
-        AvLog.d(TAG,"Processor While Loop Entry");
+        RenderBean rb = new RenderBean();
+        rb.egl = egl;
+        rb.sourceWidth = mSourceWidth;
+        rb.sourceHeight = mSourceHeight;
+        rb.endFlag = false;
+        rb.threadId = Thread.currentThread().getId();
+        AvLog.d(TAG, "Processor While Loop Entry");
         //要求数据源必须同步填充SurfaceTexture，填充完成前等待
-        while (!mProvider.frame()&&mGLThreadFlag){
+        while (!mProvider.frame() && mGLThreadFlag) {
             mInputSurfaceTexture.updateTexImage();
             mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
-            AvLog.d(TAG,"timestamp:"+ mInputSurfaceTexture.getTimestamp());
+            AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
-            GLES20.glViewport(0,0, mSourceWidth, mSourceHeight);
+            GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
 
-            if(sharedTextureId>0){
-                mRenderer.draw(sharedTextureId);
+            if (sharedTextureId > 0) {
+                sharedRenderer.draw(sharedTextureId);
             }
             mRenderer.draw(mInputSurfaceTextureId);
+            sourceFrame.unBindFrameBuffer();
 
             String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
             LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
-
-            //sharedEgl.makeCurrent();
-            //glFinish();
-            sourceFrame.unBindFrameBuffer();
-            rb.textureId=sourceFrame.getCacheTextureId();
-            //接收数据源传入的时间戳
-            rb.timeStamp=mProvider.getTimeStamp();
-            rb.textureTime= mInputSurfaceTexture.getTimestamp();
-            sharedTextureId = rb.textureId;
+            glBindTexture(GL_TEXTURE_2D, 3);
+            EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
             canSave = 1;
-            while (canSave==1){
+            while (canSave == 1) {
                 try {
                     Thread.sleep(1);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+            egl.makeCurrent();
+            //sharedEgl.makeCurrent();
+            //glFinish();
+            rb.textureId = sourceFrame.getCacheTextureId();
+            //接收数据源传入的时间戳
+            rb.timeStamp = mProvider.getTimeStamp();
+            rb.textureTime = mInputSurfaceTexture.getTimestamp();
+            sharedTextureId = rb.textureId;
             String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
             LVTextureSave.saveToPng(rb.textureId, 720, 1280, path);
 
             observable.notify(rb);
         }
-        AvLog.d(TAG,"out of gl thread loop");
-        synchronized (LOCK){
-            rb.endFlag=true;
+        AvLog.d(TAG, "out of gl thread loop");
+        synchronized (LOCK) {
+            rb.endFlag = true;
             observable.notify(rb);
             mRenderer.destroy();
             destroyGL(egl);
             LOCK.notifyAll();
-            AvLog.d(TAG,"gl thread exit");
+            AvLog.d(TAG, "gl thread exit");
         }
     }
+
     private int rundererSaveIndex = 0;
 
-    private void destroyGL(EglHelper egl){
-        mGLThreadFlag=false;
+    private void destroyGL(EglHelper egl) {
+        mGLThreadFlag = false;
         EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-        EGL14.eglDestroyContext(egl.getDisplay(),egl.getDefaultContext());
+        EGL14.eglDestroyContext(egl.getDisplay(), egl.getDefaultContext());
         EGL14.eglTerminate(egl.getDisplay());
     }
 
@@ -262,7 +301,7 @@ public class VideoSurfaceProcessor{
         observable.addObserver(observer);
     }
 
-    protected void error(int id,String msg) {
+    protected void error(int id, String msg) {
 
     }
 }
