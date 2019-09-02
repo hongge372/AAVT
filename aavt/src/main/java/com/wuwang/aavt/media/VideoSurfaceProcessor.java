@@ -33,11 +33,14 @@ import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.media.hard.LVTextureSave;
 import com.wuwang.aavt.utils.GpuUtils;
 
+import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
+import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glCheckFramebufferStatus;
 import static android.opengl.GLES20.glFinish;
+import static android.opengl.GLES20.glFramebufferTexture2D;
 import static android.opengl.GLES20.glTexImage2D;
 
 /**
@@ -92,6 +95,7 @@ public class VideoSurfaceProcessor {
                 sharedRenderer.create();
                 sharedRenderer.sizeChanged(720, 1280);
                 sharedRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
+                FrameBuffer shareNewFrame = new FrameBuffer();
                 while (true) {
                     while (canSave == 0) {
                         try {
@@ -118,18 +122,18 @@ public class VideoSurfaceProcessor {
                         Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
                     }
 
-                    sourceFrame.bindFrameBuffer();
-                    //GLES20.glViewport(0, 0, 720, 1280);
-                    //sharedRenderer.draw(sharedTextureId);
-                    //sharedRenderer.draw(sharedTextureId);
-                    //GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
+                    shareNewFrame.bindFrameBuffer(720, 1280);
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mInputSurfaceTextureId, 0);
+                    if(EGL14.eglGetError()<0){
+                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
+                    }
                     if(EGL14.eglGetError()<0){
                         Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
                     }
 
                     String path = "/sdcard/VideoEdit/pic/yaooya_father_" + rundererSaveIndex++ + ".png";
                     LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
-                    sourceFrame.unBindFrameBuffer();
+                    shareNewFrame.unBindFrameBuffer();
                     EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
                     // glFinish();
                     canSave = 0;

@@ -43,46 +43,6 @@ public class LVTextureSave {
         ByteBuffer mPixelBuf;
         mPixelBuf = ByteBuffer.allocateDirect(width * height * 4);
         mPixelBuf.order(ByteOrder.LITTLE_ENDIAN);
-//        GLES20.glActiveTexture(texID);
-//        if(EGL14.eglGetError()<0){
-//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-//        }
-//
-//        Log.v(TAG, "bind teximage to save !!!!!!!!!!!!!!!!!!");
-//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texID);
-//        if(EGL14.eglGetError()<0){
-//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-//        }
-//
-//        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-//                GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-//        if(EGL14.eglGetError()<0){
-//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-//        }
-//
-//        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-//                GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-//        if(EGL14.eglGetError()<0){
-//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-//        }
-//
-//        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-//                GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-//        if(EGL14.eglGetError()<0){
-//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-//        }
-//
-//        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-//                GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
-//        if(EGL14.eglGetError()<0){
-//            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-//        }
-
-        // Attach texture to frame buffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texID, 0);
-        if(EGL14.eglGetError()<0){
-            Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-        }
 
         mPixelBuf.rewind();
         glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mPixelBuf);
