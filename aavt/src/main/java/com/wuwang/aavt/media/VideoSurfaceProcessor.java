@@ -57,7 +57,7 @@ public class VideoSurfaceProcessor {
 
     private boolean mGLThreadFlag = false;
     private Thread mGLThread;
-    private WrapRenderer mRenderer, sharedRenderer;
+    private WrapRenderer mRenderer;
     private Observable<RenderBean> observable;
     private final Object LOCK = new Object();
 
@@ -89,12 +89,6 @@ public class VideoSurfaceProcessor {
                 }
 
                 Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
-                if (sharedRenderer == null) {
-                    sharedRenderer = new WrapRenderer(null);
-                }
-                sharedRenderer.create();
-                sharedRenderer.sizeChanged(720, 1280);
-                sharedRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
                 FrameBuffer shareNewFrame = new FrameBuffer();
                 while (true) {
                     while (canSave == 0) {
@@ -249,16 +243,11 @@ public class VideoSurfaceProcessor {
             AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
             GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
-
-            if (sharedTextureId > 0) {
-                sharedRenderer.draw(sharedTextureId);
-            }
             mRenderer.draw(mInputSurfaceTextureId);
             sourceFrame.unBindFrameBuffer();
 
             //String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
             //LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
-            glBindTexture(GL_TEXTURE_2D, 3);
             EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
             canSave = 1;
             while (canSave == 1) {
