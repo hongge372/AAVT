@@ -128,7 +128,7 @@ public class VideoSurfaceProcessor {
                     String path = "/sdcard/VideoEdit/pic/yaooya_father_" + rundererSaveIndex++ + ".png";
                     LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
                     shareNewFrame.unBindFrameBuffer();
-                    EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                    //EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
                     // glFinish();
                     canSave = 0;
                 }
@@ -248,7 +248,7 @@ public class VideoSurfaceProcessor {
 
             //String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
             //LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
-            EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+            //EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
             canSave = 1;
             while (canSave == 1) {
                 try {
