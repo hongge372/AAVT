@@ -37,11 +37,15 @@ import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
+import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glCheckFramebufferStatus;
+import static android.opengl.GLES20.glCopyTexSubImage2D;
 import static android.opengl.GLES20.glFinish;
 import static android.opengl.GLES20.glFramebufferTexture2D;
+import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glTexImage2D;
+import static android.opengl.GLES30.GL_READ_FRAMEBUFFER;
 
 /**
  * VideoSurfaceProcessor 视频流图像处理类，以{@link ITextureProvider}作为视频流图像输入。通过设置{@link IObserver}
@@ -83,10 +87,6 @@ public class VideoSurfaceProcessor {
                     //todo 错误处理
                     return;
                 }
-                sharedTextureId = GpuUtils.createTextureID(false);
-                if(EGL14.eglGetError()<0){
-                    Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-                }
 
                 Log.v(TAG, "get two texture shareId:" + sharedTextureId + " runderer: " + mInputSurfaceTextureId);
                 FrameBuffer shareNewFrame = new FrameBuffer();
@@ -98,32 +98,9 @@ public class VideoSurfaceProcessor {
                             e.printStackTrace();
                         }
                     }
-                    if(EGL14.eglGetError()<0){
-                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-                    }
-
-                    sharedEgl.makeCurrent();
-                    if(EGL14.eglGetError()<0){
-                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-                    }
-
-                    GLES20.glActiveTexture(sharedTextureId);
-                    //Log.v(TAG, "bind teximage to save !!!!!!!!!!!!!!!!!!");
-                    //GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, sharedTextureId);
-                    glBindTexture(GL_TEXTURE_2D, sharedTextureId);
-                    //glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
-                    if(EGL14.eglGetError()<0){
-                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-                    }
 
                     shareNewFrame.bindFrameBuffer(720, 1280);
                     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mInputSurfaceTextureId, 0);
-                    if(EGL14.eglGetError()<0){
-                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-                    }
-                    if(EGL14.eglGetError()<0){
-                        Log.v(TAG, "XXXXXXXXXyayayay ,get opengl err");
-                    }
 
                     String path = "/sdcard/VideoEdit/pic/yaooya_father_" + rundererSaveIndex++ + ".png";
                     LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, path);
@@ -246,6 +223,9 @@ public class VideoSurfaceProcessor {
             mRenderer.draw(mInputSurfaceTextureId);
             sourceFrame.unBindFrameBuffer();
 
+
+            copytonew(mInputSurfaceTexture);
+
             //String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
             //LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
             //EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
@@ -257,6 +237,8 @@ public class VideoSurfaceProcessor {
                     e.printStackTrace();
                 }
             }
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindTexture(GL_TEXTURE_2D,0);
             egl.makeCurrent();
             //sharedEgl.makeCurrent();
             //glFinish();
@@ -279,6 +261,20 @@ public class VideoSurfaceProcessor {
             LOCK.notifyAll();
             AvLog.d(TAG, "gl thread exit");
         }
+    }
+
+    private void copytonew(SurfaceTexture mInputSurfaceTexture) {
+        int newTexId = GpuUtils.createTextureID(false);
+        sharedTextureId = newTexId;
+
+       // FrameBuffer buffer = new FrameBuffer();
+        int[] fbo = new int[4];
+        glGenFramebuffers(1,fbo, 0);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo[0]);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, mInputSurfaceTextureId, 0);
+        glBindTexture(GL_TEXTURE_2D, sharedTextureId);
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 720,1080);
     }
 
     private int rundererSaveIndex = 0;
