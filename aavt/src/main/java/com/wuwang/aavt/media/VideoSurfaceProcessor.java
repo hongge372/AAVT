@@ -252,8 +252,8 @@ public class VideoSurfaceProcessor {
             mRenderer.draw(mInputSurfaceTextureId);
             sourceFrame.unBindFrameBuffer();
 
-            String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
-            LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
+            //String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
+            //LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
             glBindTexture(GL_TEXTURE_2D, 3);
             EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
             canSave = 1;
@@ -272,8 +272,8 @@ public class VideoSurfaceProcessor {
             rb.timeStamp = mProvider.getTimeStamp();
             rb.textureTime = mInputSurfaceTexture.getTimestamp();
             sharedTextureId = rb.textureId;
-            String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
-            LVTextureSave.saveToPng(rb.textureId, 720, 1280, path);
+            //String path = "/sdcard/VideoEdit/pic/runder_" + rundererSaveIndex++ + ".png";
+            //LVTextureSave.saveToPng(rb.textureId, 720, 1280, path);
 
             observable.notify(rb);
         }
