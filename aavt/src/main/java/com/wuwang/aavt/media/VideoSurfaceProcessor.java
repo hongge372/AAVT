@@ -221,13 +221,15 @@ public class VideoSurfaceProcessor {
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
             GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
             mRenderer.draw(mInputSurfaceTextureId);
+            int copiedTex = copytonew(mInputSurfaceTexture);
+            mRenderer.draw(copiedTex);
+
             sourceFrame.unBindFrameBuffer();
 
 
-            copytonew(mInputSurfaceTexture);
 
-            //String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
-            //LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
+            String path2 = "/sdcard/VideoEdit/pic/shared_runder_" + rundererSaveIndex++ + ".png";
+            LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
             //EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
             canSave = 1;
             while (canSave == 1) {
@@ -263,7 +265,7 @@ public class VideoSurfaceProcessor {
         }
     }
 
-    private void copytonew(SurfaceTexture mInputSurfaceTexture) {
+    private int copytonew(SurfaceTexture mInputSurfaceTexture) {
         int newTexId = GpuUtils.createTextureID(false);
         sharedTextureId = newTexId;
 
@@ -274,7 +276,11 @@ public class VideoSurfaceProcessor {
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                 GL_TEXTURE_2D, mInputSurfaceTextureId, 0);
         glBindTexture(GL_TEXTURE_2D, sharedTextureId);
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, 720,1080);
+        glCopyTexSubImage2D(sharedTextureId, 0, 0, 0, 0, 0, 720,1080);
+        //String path2 = "/sdcard/VideoEdit/pic/copy_tex_" + rundererSaveIndex++ + ".png";
+        //LVTextureSave.saveToPng(sharedTextureId, 720, 1280, path2);
+        rundererSaveIndex++;
+        return sharedTextureId;
     }
 
     private int rundererSaveIndex = 0;
