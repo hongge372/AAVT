@@ -31,6 +31,14 @@ import com.wuwang.aavt.gl.FrameBuffer;
 import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.utils.GpuUtils;
 
+import static android.opengl.GLES20.GL_FRAMEBUFFER;
+import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE_2D;
+import static android.opengl.GLES20.glActiveTexture;
+import static android.opengl.GLES20.glBindFramebuffer;
+import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glCopyTexSubImage2D;
+
 /**
  * VideoSurfaceProcessor 视频流图像处理类，以{@link ITextureProvider}作为视频流图像输入。通过设置{@link IObserver}
  * 来接收处理完毕的{@link RenderBean}，并做相应处理，诸如展示、编码等。
@@ -100,6 +108,7 @@ public class VideoSurfaceProcessor{
         mRenderer=new WrapRenderer(renderer);
     }
 
+    private int saveTextureIndex = 1;
     private void glRun(){
         EglHelper egl=new EglHelper();
         boolean ret=egl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),new SurfaceTexture(1));
@@ -157,6 +166,11 @@ public class VideoSurfaceProcessor{
             mRenderer.draw(mInputSurfaceTextureId);
             sourceFrame.unBindFrameBuffer();
             rb.textureId=sourceFrame.getCacheTextureId();
+            saveTextureIndex++;
+            String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
+            LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
+            int newId = GpuUtils.createTextureID(false);
+            copyToNew(rb.textureId, newId);
             //接收数据源传入的时间戳
             rb.timeStamp=mProvider.getTimeStamp();
             rb.textureTime= mInputSurfaceTexture.getTimestamp();
@@ -171,6 +185,21 @@ public class VideoSurfaceProcessor{
             LOCK.notifyAll();
             AvLog.d(TAG,"gl thread exit");
         }
+    }
+
+    private void copyToNew(int srcTex, int outTexId) {
+        int fboId = srcTex->GetFrameBufferId();
+        glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+
+        outTexId = dstTex->GetTextureId();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, outTexId);
+
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                0, 0, srcTex->GetWidth(), srcTex->GetHeight());
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     private void destroyGL(EglHelper egl){
