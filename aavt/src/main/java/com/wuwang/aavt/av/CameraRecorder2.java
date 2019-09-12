@@ -14,6 +14,7 @@
 package com.wuwang.aavt.av;
 
 import com.wuwang.aavt.core.Renderer;
+import com.wuwang.aavt.egl.EglHelper;
 import com.wuwang.aavt.media.CameraProvider;
 import com.wuwang.aavt.media.ITextureProvider;
 import com.wuwang.aavt.media.SurfaceEncoder;
@@ -42,6 +43,9 @@ public class CameraRecorder2 {
     private SoundRecorder mSoundRecord;
 
     public CameraRecorder2(){
+        if(EglHelper.shareContext!=null){
+            EglHelper.shareContext = null;
+        }
         //用于视频混流和存储
         mMuxer=new StrengthenMp4MuxStore(true);
 

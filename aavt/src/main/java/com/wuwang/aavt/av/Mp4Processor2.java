@@ -13,6 +13,7 @@
  */
 package com.wuwang.aavt.av;
 
+import com.wuwang.aavt.egl.EglHelper;
 import com.wuwang.aavt.media.Mp4Provider;
 import com.wuwang.aavt.media.SurfaceEncoder;
 import com.wuwang.aavt.media.SurfaceShower;
@@ -37,6 +38,9 @@ public class Mp4Processor2 {
     private IHardStore mMuxer;
 
     public Mp4Processor2(){
+        if(EglHelper.shareContext!=null){
+            EglHelper.shareContext = null;
+        }
         //用于视频混流和存储
         mMuxer=new StrengthenMp4MuxStore(true);
 

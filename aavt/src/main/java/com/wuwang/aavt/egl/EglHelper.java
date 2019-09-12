@@ -35,7 +35,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 public class EglHelper {
-
+    public static EGLContext shareContext = null;
     private boolean isDebug=true;
     private EGLDisplay mEGLDisplay;
     private EGLConfig mEGLConfig;
@@ -107,17 +107,26 @@ public class EglHelper {
         return EGL14.eglCreatePbufferSurface(mEGLDisplay,config,new int[]{EGL14.EGL_WIDTH,width,EGL14.EGL_HEIGHT,height,EGL14.EGL_NONE},0);
     }
 
-    public boolean createGLESWithSurface(EGLConfigAttrs attrs,EGLContextAttrs ctxAttrs,Object surface){
+    public synchronized boolean createGLESWithSurface(EGLConfigAttrs attrs,EGLContextAttrs ctxAttrs,Object surface){
         EGLConfig config=getConfig(attrs.surfaceType(EGL14.EGL_WINDOW_BIT).makeDefault(true));
         if(config==null){
             log("getConfig failed : "+EGL14.eglGetError());
             return false;
         }
-        mEGLContext=createContext(config,EGL14.EGL_NO_CONTEXT,ctxAttrs.makeDefault(true));
-        if(mEGLContext==EGL14.EGL_NO_CONTEXT){
-            log("createContext failed : "+EGL14.eglGetError());
-            return false;
+        if(shareContext==null){
+            shareContext = mEGLContext=createContext(config,EGL14.EGL_NO_CONTEXT,ctxAttrs.makeDefault(true));
+            if(mEGLContext==EGL14.EGL_NO_CONTEXT){
+                log("createContext failed : "+EGL14.eglGetError());
+                return false;
+            }
+        }else {
+            mEGLContext=createContext(config, shareContext,ctxAttrs.makeDefault(true));
+            if(mEGLContext==EGL14.EGL_NO_CONTEXT){
+                log("createContext failed : "+EGL14.eglGetError());
+                return false;
+            }
         }
+
         mEGLSurface=createWindowSurface(surface);
         if(mEGLSurface==EGL14.EGL_NO_SURFACE){
             log("createWindowSurface failed : "+EGL14.eglGetError());
