@@ -23,7 +23,7 @@ import android.opengl.GLES20;
  */
 public class FrameBuffer {
 
-    private int[] mFrameTemp;
+    public int[] mFrameTemp;
     private int lastWidth=0,lastHeight=0;
 
     /**
