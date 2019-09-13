@@ -31,6 +31,9 @@ import com.wuwang.aavt.gl.FrameBuffer;
 import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.utils.GpuUtils;
 
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
@@ -48,8 +51,9 @@ import static android.opengl.GLES20.glCopyTexSubImage2D;
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 public class VideoSurfaceProcessor {
-
     private String TAG = getClass().getSimpleName();
+    public static int maxQueueSize = 8;
+    public static LinkedBlockingQueue<MyTextureFrame> texQueue = null;
 
     private boolean mGLThreadFlag = false;
     private Thread mGLThread;
@@ -61,6 +65,8 @@ public class VideoSurfaceProcessor {
 
     public VideoSurfaceProcessor() {
         observable = new Observable<>();
+        StuCopyTexture stu = new StuCopyTexture();
+        stu.pullSave();
     }
 
     public void setTextureProvider(ITextureProvider provider) {
@@ -111,6 +117,7 @@ public class VideoSurfaceProcessor {
     private int saveTextureIndex = 1;
 
     private void glRun() {
+        texQueue = new LinkedBlockingQueue<MyTextureFrame>(maxQueueSize);
         EglHelper egl = new EglHelper();
         boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
         if (!ret) {
@@ -168,18 +175,29 @@ public class VideoSurfaceProcessor {
             sourceFrame.unBindFrameBuffer();
             rb.textureId = sourceFrame.getCacheTextureId();
             saveTextureIndex++;
-            String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
-            LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
+            //String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
+            //LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
             //int newId = GpuUtils.createTextureID(false);
             //copyToNew(rb.textureId, newId);
-            int newTexId = copyToNew(rb.textureId, sourceFrame.mFrameTemp[0]);
-
+            MyTextureFrame textureFrame = copyToNew(rb.textureId, sourceFrame.mFrameTemp[0]);
+            try {
+                texQueue.put(textureFrame);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             //接收数据源传入的时间戳
             rb.timeStamp = mProvider.getTimeStamp();
             rb.textureTime = mInputSurfaceTexture.getTimestamp();
             observable.notify(rb);
         }
         AvLog.d(TAG, "out of gl thread loop");
+        MyTextureFrame frame = new MyTextureFrame();
+        frame.endFlg = true;
+        try {
+            texQueue.put(frame);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         synchronized (LOCK) {
             rb.endFlag = true;
             observable.notify(rb);
@@ -208,24 +226,25 @@ public class VideoSurfaceProcessor {
         return textureIds[0];
     }
 
-    private int copyToNew(int srcTex, int oldFboId) {
+    private MyTextureFrame copyToNew(int oldTex, int oldFboId) {
         int[] fbos = new int[1];
         GLES20.glGenFramebuffers(1, fbos, 0);
         int fboId = fbos[0];
         glBindFramebuffer(GL_FRAMEBUFFER, fboId);
         int newTexId = createTexture();
+        //绑定纹理和fbo
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
                 GLES20.GL_TEXTURE_2D, newTexId, 0);
+        // 设置内存大小
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 720, 1280,
                 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
         //6. 检测是否绑定从成功
         if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
                 != GLES20.GL_FRAMEBUFFER_COMPLETE) {
             Log.e("zzz", "glFramebufferTexture2D error");
-
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         }
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
         //copy new
         glBindFramebuffer(GL_FRAMEBUFFER, oldFboId);
@@ -239,7 +258,10 @@ public class VideoSurfaceProcessor {
         saveTextureIndex++;
         String out = "/sdcard/VideoEdit/pic/pic_new_" + saveTextureIndex + ".png";
         LVTextureSave.saveToPng(newTexId, 720, 1280, out);
-        return newTexId;
+        MyTextureFrame texFrame = new MyTextureFrame();
+        texFrame.texId = newTexId;
+        texFrame.fboId = fboId;
+        return texFrame;
     }
 
     private void destroyGL(EglHelper egl) {
