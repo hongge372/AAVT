@@ -119,55 +119,16 @@ public class VideoSurfaceProcessor {
         //要求数据源必须同步填充SurfaceTexture，填充完成前等待
         while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
             try {
-                Thread.sleep(10);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        //while (queueget()) ;
-
         while (getFrameEncode2()) ;
-    }
-
-    private boolean queueget() {
-        while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        MyTextureFrame frame = null;
-        try {
-            frame = Mp4Provider.texQueue.take();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        if (frame.endFlg) {
-            return false;
-        }
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindFramebuffer(GL_FRAMEBUFFER, frame.fboId);
-
-        saveTextureIndex++;
-        String out = "/sdcard/VideoEdit/pic/pic_thread_" + saveTextureIndex + ".png";
-        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        return true;
     }
 
 
     private boolean getFrameEncode2() {
-
-        while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         MyTextureFrame frame = null;
         try {
             frame = Mp4Provider.texQueue.take();
