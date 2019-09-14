@@ -101,7 +101,7 @@ public class VideoSurfaceProcessor {
     }
 
     private int saveTextureIndex = 1;
-
+    FrameBuffer sourceFrame;
     private void createEGL() {
         egl = new EglHelper();
         boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
@@ -109,6 +109,14 @@ public class VideoSurfaceProcessor {
             //todo 错误处理
             return;
         }
+        if(mRenderer==null){
+            mRenderer=new WrapRenderer(null);
+        }
+         sourceFrame=new FrameBuffer();
+        mRenderer.create();
+        mRenderer.sizeChanged(720, 1280);
+        mRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
+
     }
 
     private void glRunning() {
@@ -147,6 +155,12 @@ public class VideoSurfaceProcessor {
         LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        sourceFrame.bindFrameBuffer(720, 1280);
+        GLES20.glViewport(0,0, 720, 1280);
+        mRenderer.draw(frame.texId);
+        sourceFrame.unBindFrameBuffer();
+        rb.textureId = sourceFrame.getCacheTextureId();
         rb.sourceWidth = frame.width;
         rb.sourceHeight = frame.height;
         //接收数据源传入的时间戳
