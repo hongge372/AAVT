@@ -164,6 +164,7 @@ public class Mp4Provider implements ITextureProvider {
                 LVTextureSave.saveToPng(textureFrame.texId, 720, 1280, outCopy);
                 textureFrame.width = 720;
                 textureFrame.height = 1280;
+                textureFrame.nowTimeStamp = nowTimeStamp;
                 try {
                     texQueue.put(textureFrame);
                 } catch (InterruptedException e) {

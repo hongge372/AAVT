@@ -1,6 +1,7 @@
 package com.wuwang.aavt.media;
 
 public class MyTextureFrame {
+    public long nowTimeStamp;
     int texId;
     int fboId;
     boolean endFlg = false;

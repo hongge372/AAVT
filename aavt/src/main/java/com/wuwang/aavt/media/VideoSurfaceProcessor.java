@@ -150,8 +150,8 @@ public class VideoSurfaceProcessor {
         rb.sourceWidth = frame.width;
         rb.sourceHeight = frame.height;
         //接收数据源传入的时间戳
-        rb.timeStamp = mProvider.getTimeStamp();
-        //observable.notify(rb);
+        rb.timeStamp = frame.nowTimeStamp;
+        observable.notify(rb);
         return true;
     }
 
