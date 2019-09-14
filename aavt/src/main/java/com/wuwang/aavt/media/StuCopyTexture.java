@@ -37,7 +37,7 @@ public class StuCopyTexture {
 
     private int saveTextureIndex = 0;
     private boolean queueget() {
-        while (VideoSurfaceProcessor.texQueue == null || VideoSurfaceProcessor.texQueue.size() <=0){
+        while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <=0){
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -46,7 +46,7 @@ public class StuCopyTexture {
         }
         MyTextureFrame frame = null;
         try {
-            frame = VideoSurfaceProcessor.texQueue.take();
+            frame = Mp4Provider.texQueue.take();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

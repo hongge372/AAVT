@@ -13,6 +13,8 @@
  */
 package com.wuwang.aavt.av;
 
+import android.util.Log;
+
 import com.wuwang.aavt.egl.EglHelper;
 import com.wuwang.aavt.media.Mp4Provider;
 import com.wuwang.aavt.media.SurfaceEncoder;
@@ -30,7 +32,7 @@ import com.wuwang.aavt.media.hard.StrengthenMp4MuxStore;
  * @version v1.0 2017:10:26 18:48
  */
 public class Mp4Processor2 {
-
+    private final String TAG = getClass().getName();
     private VideoSurfaceProcessor mTextureProcessor;
     private Mp4Provider mMp4Provider;
     private SurfaceShower mShower;
@@ -81,7 +83,14 @@ public class Mp4Processor2 {
     }
 
     public void open(){
-        mTextureProcessor.start();
+        //mTextureProcessor.start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.v(TAG, " ???");
+                mMp4Provider.open(null);
+            }
+        }).start();
     }
 
     public void close(){
