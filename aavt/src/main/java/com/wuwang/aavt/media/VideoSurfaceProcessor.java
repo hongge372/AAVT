@@ -75,7 +75,7 @@ public class VideoSurfaceProcessor {
             @Override
             public void run() {
                 createEGL();
-                while (queueget());
+                //while (queueget());
                 glRunning();
             }
         }).start();
@@ -101,6 +101,33 @@ public class VideoSurfaceProcessor {
     }
 
     private int saveTextureIndex = 1;
+
+    private void createEGL() {
+        egl = new EglHelper();
+        boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
+        if (!ret) {
+            //todo 错误处理
+            return;
+        }
+    }
+
+    private void glRunning() {
+//        //用于其他的回调
+        rb.egl = egl;
+        rb.endFlag = false;
+        AvLog.d(TAG, "Processor While Loop Entry");
+        //要求数据源必须同步填充SurfaceTexture，填充完成前等待
+        while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        //while (queueget()) ;
+
+        while (getFrameEncode2()) ;
+    }
 
     private boolean queueget() {
         while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
@@ -131,22 +158,9 @@ public class VideoSurfaceProcessor {
         return true;
     }
 
-    private void createEGL() {
-        egl = new EglHelper();
-        boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
-        if (!ret) {
-            //todo 错误处理
-            return;
-        }
-    }
 
-    private void glRunning() {
-//        //用于其他的回调
-        rb.egl = egl;
-        rb.endFlag = false;
-        rb.threadId = Thread.currentThread().getId();
-        AvLog.d(TAG, "Processor While Loop Entry");
-        //要求数据源必须同步填充SurfaceTexture，填充完成前等待
+    private boolean getFrameEncode2() {
+
         while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
             try {
                 Thread.sleep(10);
@@ -154,47 +168,30 @@ public class VideoSurfaceProcessor {
                 e.printStackTrace();
             }
         }
-        while (getFrameEncode()) ;
-    }
-
-
-    private boolean getFrameEncode() {
-        {
-            MyTextureFrame frame = null;
-            try {
-                frame = Mp4Provider.texQueue.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (frame.endFlg) {
-                return false;
-            }
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindFramebuffer(GL_FRAMEBUFFER, frame.fboId);
-
-            saveTextureIndex++;
-            String out = "/sdcard/VideoEdit/pic/pic_thread_process_" + saveTextureIndex + ".png";
-            LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            if (true)
-                return true;
-            //stu.pullSave();
-
-            rb.sourceWidth = frame.width;
-            rb.sourceHeight = frame.height;
-            //接收数据源传入的时间戳
-            rb.timeStamp = mProvider.getTimeStamp();
-            //rb.textureTime = mInputSurfaceTexture.getTimestamp();
-            observable.notify(rb);
-
-            AvLog.d(TAG, "out of gl thread loop");
-            frame = new MyTextureFrame();
-            frame.endFlg = true;
-            return true;
+        MyTextureFrame frame = null;
+        try {
+            frame = Mp4Provider.texQueue.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (frame.endFlg) {
+            return false;
         }
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindFramebuffer(GL_FRAMEBUFFER, frame.fboId);
+
+        saveTextureIndex++;
+        String out = "/sdcard/VideoEdit/pic/pic_thread_process_" + saveTextureIndex + ".png";
+        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        rb.sourceWidth = frame.width;
+        rb.sourceHeight = frame.height;
+        //接收数据源传入的时间戳
+        rb.timeStamp = mProvider.getTimeStamp();
+        //observable.notify(rb);
+        return true;
     }
 
     private void destroyGL(EglHelper egl) {
