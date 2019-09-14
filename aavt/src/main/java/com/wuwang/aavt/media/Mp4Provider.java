@@ -162,11 +162,11 @@ public class Mp4Provider implements ITextureProvider {
                 out = "/sdcard/VideoEdit/pic/pic_copy_" + saveTextureIndex + ".png";
                 glBindFramebuffer(GL_FRAMEBUFFER, fboId);
                 LVTextureSave.saveToPng(textureFrame.texId, 720, 1280, out);
-//                try {
-//                    texQueue.put(textureFrame);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
+                try {
+                    texQueue.put(textureFrame);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else if (mOutputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
 
             } else if (mOutputIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
