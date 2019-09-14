@@ -157,8 +157,11 @@ public class Mp4Provider implements ITextureProvider {
                 String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
                 LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, out);
                 //int newId = GpuUtils.createTextureID(false);
-                //copyToNew(rb.textureId, newId);
-//                MyTextureFrame textureFrame = copyToNew(rb.textureId, sourceFrame.mFrameTemp[0]);
+                //copyToNew(mInputSurfaceTextureId, newId);
+                MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
+                out = "/sdcard/VideoEdit/pic/pic_copy_" + saveTextureIndex + ".png";
+                glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+                LVTextureSave.saveToPng(textureFrame.texId, 720, 1280, out);
 //                try {
 //                    texQueue.put(textureFrame);
 //                } catch (InterruptedException e) {
@@ -191,10 +194,11 @@ public class Mp4Provider implements ITextureProvider {
         return textureIds[0];
     }
 
+    private int fboId;
     private MyTextureFrame copyToNew(int oldTex, int oldFboId) {
         int[] fbos = new int[1];
         GLES20.glGenFramebuffers(1, fbos, 0);
-        int fboId = fbos[0];
+        fboId = fbos[0];
         glBindFramebuffer(GL_FRAMEBUFFER, fboId);
         int newTexId = createTexture();
         //绑定纹理和fbo
@@ -221,8 +225,8 @@ public class Mp4Provider implements ITextureProvider {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         saveTextureIndex++;
-        String out = "/sdcard/VideoEdit/pic/pic_new_" + saveTextureIndex + ".png";
-        LVTextureSave.saveToPng(newTexId, 720, 1280, out);
+//        String out = "/sdcard/VideoEdit/pic/pic_new_" + saveTextureIndex + ".png";
+//        LVTextureSave.saveToPng(newTexId, 720, 1280, out);
         MyTextureFrame texFrame = new MyTextureFrame();
         texFrame.texId = newTexId;
         texFrame.fboId = fboId;
