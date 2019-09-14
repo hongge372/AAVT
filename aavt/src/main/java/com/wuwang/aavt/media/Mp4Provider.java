@@ -152,10 +152,10 @@ public class Mp4Provider implements ITextureProvider {
                 GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
                 mRenderer.draw(mInputSurfaceTextureId);
                 saveTextureIndex++;
+                sourceFrame.unBindFrameBuffer();
+                glBindFramebuffer(GL_FRAMEBUFFER, sourceFrame.mFrameTemp[0]);
                 String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
                 LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, out);
-                sourceFrame.unBindFrameBuffer();
-
                 //int newId = GpuUtils.createTextureID(false);
                 //copyToNew(rb.textureId, newId);
 //                MyTextureFrame textureFrame = copyToNew(rb.textureId, sourceFrame.mFrameTemp[0]);
