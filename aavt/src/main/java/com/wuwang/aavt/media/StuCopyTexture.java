@@ -14,10 +14,14 @@ import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 
 public class StuCopyTexture {
-    private WrapRenderer mRenderer;
+    public WrapRenderer mRenderer;
+    public EglHelper egl = null;
+    public StuCopyTexture(){
+
+    }
 
     private void createEGL() {
-        EglHelper egl = new EglHelper();
+        egl = new EglHelper();
         boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
         if (!ret) {
             //todo 错误处理

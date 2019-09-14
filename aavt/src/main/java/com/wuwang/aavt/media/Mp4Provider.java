@@ -154,14 +154,16 @@ public class Mp4Provider implements ITextureProvider {
                 saveTextureIndex++;
                 sourceFrame.unBindFrameBuffer();
                 glBindFramebuffer(GL_FRAMEBUFFER, sourceFrame.mFrameTemp[0]);
-                String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
-                LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, out);
+                //String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
+                //LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, out);
                 //int newId = GpuUtils.createTextureID(false);
                 //copyToNew(mInputSurfaceTextureId, newId);
                 MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
-                out = "/sdcard/VideoEdit/pic/pic_copy_" + saveTextureIndex + ".png";
+                String outCopy = "/sdcard/VideoEdit/pic/pic_copy_" + saveTextureIndex + ".png";
                 glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-                LVTextureSave.saveToPng(textureFrame.texId, 720, 1280, out);
+                LVTextureSave.saveToPng(textureFrame.texId, 720, 1280, outCopy);
+                textureFrame.width = 720;
+                textureFrame.height = 1280;
                 try {
                     texQueue.put(textureFrame);
                 } catch (InterruptedException e) {

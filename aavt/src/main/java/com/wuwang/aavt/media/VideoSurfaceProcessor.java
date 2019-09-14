@@ -54,16 +54,16 @@ public class VideoSurfaceProcessor {
     private String TAG = getClass().getSimpleName();
 
     private boolean mGLThreadFlag = false;
-    private Thread mGLThread;
     private Observable<RenderBean> observable;
     private final Object LOCK = new Object();
-
     private ITextureProvider mProvider;
+    RenderBean rb = new RenderBean();
+    EglHelper egl = null;
+    //StuCopyTexture stu = new StuCopyTexture();
+    public WrapRenderer mRenderer;
 
     public VideoSurfaceProcessor() {
         observable = new Observable<>();
-        StuCopyTexture stu = new StuCopyTexture();
-        stu.pullSave();
     }
 
     public void setTextureProvider(ITextureProvider provider) {
@@ -71,26 +71,15 @@ public class VideoSurfaceProcessor {
     }
 
     public void start() {
-        synchronized (LOCK) {
-            if (!mGLThreadFlag) {
-                if (mProvider == null) {
-                    return;
-                }
-                mGLThreadFlag = true;
-                mGLThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        glRun();
-                    }
-                });
-                mGLThread.start();
-                try {
-                    LOCK.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                createEGL();
+                while (queueget());
+                glRunning();
             }
-        }
+        }).start();
+
     }
 
     public void stop() {
@@ -113,43 +102,100 @@ public class VideoSurfaceProcessor {
 
     private int saveTextureIndex = 1;
 
-    private void glRun() {
+    private boolean queueget() {
+        while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        MyTextureFrame frame = null;
+        try {
+            frame = Mp4Provider.texQueue.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (frame.endFlg) {
+            return false;
+        }
 
-//        Point size = mProvider.open(mInputSurfaceTexture);
-//
+        glActiveTexture(GL_TEXTURE0);
+        glBindFramebuffer(GL_FRAMEBUFFER, frame.fboId);
+
+        saveTextureIndex++;
+        String out = "/sdcard/VideoEdit/pic/pic_thread_" + saveTextureIndex + ".png";
+        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return true;
+    }
+
+    private void createEGL() {
+        egl = new EglHelper();
+        boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
+        if (!ret) {
+            //todo 错误处理
+            return;
+        }
+    }
+
+    private void glRunning() {
 //        //用于其他的回调
-        RenderBean rb = new RenderBean();
-//        rb.egl = egl;
-//        rb.sourceWidth = mSourceWidth;
-//        rb.sourceHeight = mSourceHeight;
+        rb.egl = egl;
         rb.endFlag = false;
         rb.threadId = Thread.currentThread().getId();
         AvLog.d(TAG, "Processor While Loop Entry");
         //要求数据源必须同步填充SurfaceTexture，填充完成前等待
-        while (!mProvider.frame() && mGLThreadFlag) {
+        while (Mp4Provider.texQueue == null || Mp4Provider.texQueue.size() <= 0) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        while (getFrameEncode()) ;
+    }
 
+
+    private boolean getFrameEncode() {
+        {
+            MyTextureFrame frame = null;
+            try {
+                frame = Mp4Provider.texQueue.take();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (frame.endFlg) {
+                return false;
+            }
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindFramebuffer(GL_FRAMEBUFFER, frame.fboId);
+
+            saveTextureIndex++;
+            String out = "/sdcard/VideoEdit/pic/pic_thread_process_" + saveTextureIndex + ".png";
+            LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            if (true)
+                return true;
+            //stu.pullSave();
+
+            rb.sourceWidth = frame.width;
+            rb.sourceHeight = frame.height;
             //接收数据源传入的时间戳
             rb.timeStamp = mProvider.getTimeStamp();
             //rb.textureTime = mInputSurfaceTexture.getTimestamp();
             observable.notify(rb);
-        }
-        AvLog.d(TAG, "out of gl thread loop");
-        MyTextureFrame frame = new MyTextureFrame();
-        frame.endFlg = true;
-//        try {
-//            texQueue.put(frame);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-        synchronized (LOCK) {
-//            rb.endFlag = true;
-//            observable.notify(rb);
-//            destroyGL(egl);
-            LOCK.notifyAll();
-            AvLog.d(TAG, "gl thread exit");
-        }
-    }
 
+            AvLog.d(TAG, "out of gl thread loop");
+            frame = new MyTextureFrame();
+            frame.endFlg = true;
+            return true;
+        }
+
+    }
 
     private void destroyGL(EglHelper egl) {
         mGLThreadFlag = false;

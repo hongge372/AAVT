@@ -83,7 +83,6 @@ public class Mp4Processor2 {
     }
 
     public void open(){
-        //mTextureProcessor.start();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -91,6 +90,7 @@ public class Mp4Processor2 {
                 mMp4Provider.open(null);
             }
         }).start();
+        mTextureProcessor.start();
     }
 
     public void close(){
