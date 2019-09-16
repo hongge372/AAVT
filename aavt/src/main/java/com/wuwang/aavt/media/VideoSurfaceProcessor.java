@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +14,8 @@
 package com.wuwang.aavt.media;
 
 import android.annotation.TargetApi;
+import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -27,7 +29,11 @@ import com.wuwang.aavt.core.Renderer;
 import com.wuwang.aavt.egl.EGLConfigAttrs;
 import com.wuwang.aavt.egl.EGLContextAttrs;
 import com.wuwang.aavt.egl.EglHelper;
+import com.wuwang.aavt.gl.BeautyFilter;
 import com.wuwang.aavt.gl.FrameBuffer;
+import com.wuwang.aavt.gl.GroupFilter;
+import com.wuwang.aavt.gl.StickFigureFilter;
+import com.wuwang.aavt.gl.WaterMarkFilter;
 import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.utils.GpuUtils;
 
@@ -39,34 +45,33 @@ import com.wuwang.aavt.utils.GpuUtils;
  * @version v1.0 2017:10:27 08:37
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-public class VideoSurfaceProcessor{
-
-    private String TAG=getClass().getSimpleName();
-
-    private boolean mGLThreadFlag=false;
+public class VideoSurfaceProcessor {
+    private String TAG = getClass().getSimpleName();
+    public static Context context = null;
+    private boolean mGLThreadFlag = false;
     private Thread mGLThread;
     private WrapRenderer mRenderer;
     private Observable<RenderBean> observable;
-    private final Object LOCK=new Object();
+    private final Object LOCK = new Object();
 
     private ITextureProvider mProvider;
 
-    public VideoSurfaceProcessor(){
-        observable=new Observable<>();
+    public VideoSurfaceProcessor() {
+        observable = new Observable<>();
     }
 
-    public void setTextureProvider(ITextureProvider provider){
-        this.mProvider=provider;
+    public void setTextureProvider(ITextureProvider provider) {
+        this.mProvider = provider;
     }
 
-    public void start(){
-        synchronized (LOCK){
-            if(!mGLThreadFlag){
-                if(mProvider==null){
+    public void start() {
+        synchronized (LOCK) {
+            if (!mGLThreadFlag) {
+                if (mProvider == null) {
                     return;
                 }
-                mGLThreadFlag=true;
-                mGLThread=new Thread(new Runnable() {
+                mGLThreadFlag = true;
+                mGLThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         glRun();
@@ -82,10 +87,10 @@ public class VideoSurfaceProcessor{
         }
     }
 
-    public void stop(){
-        synchronized (LOCK){
-            if(mGLThreadFlag){
-                mGLThreadFlag=false;
+    public void stop() {
+        synchronized (LOCK) {
+            if (mGLThreadFlag) {
+                mGLThreadFlag = false;
                 mProvider.close();
                 try {
                     LOCK.wait();
@@ -96,87 +101,130 @@ public class VideoSurfaceProcessor{
         }
     }
 
-    public void setRenderer(Renderer renderer){
-        mRenderer=new WrapRenderer(renderer);
+    public void setRenderer(Renderer renderer) {
+        mRenderer = new WrapRenderer(renderer);
     }
 
-    private void glRun(){
-        EglHelper egl=new EglHelper();
-        boolean ret=egl.createGLESWithSurface(new EGLConfigAttrs(),new EGLContextAttrs(),new SurfaceTexture(1));
-        if(!ret){
+    public static int ifUseRenderer = 0;
+
+    private void glRun() {
+        EglHelper egl = new EglHelper();
+        boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
+        if (!ret) {
             //todo 错误处理
             return;
         }
         int mInputSurfaceTextureId = GpuUtils.createTextureID(true);
         SurfaceTexture mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
 
-        Point size=mProvider.open(mInputSurfaceTexture);
-        AvLog.d(TAG,"Provider Opened . data size (x,y)="+size.x+"/"+size.y);
-        if(size.x<=0||size.y<=0){
+        Point size = mProvider.open(mInputSurfaceTexture);
+        AvLog.d(TAG, "Provider Opened . data size (x,y)=" + size.x + "/" + size.y);
+        if (size.x <= 0 || size.y <= 0) {
             //todo 错误处理
             destroyGL(egl);
-            synchronized (LOCK){
+            synchronized (LOCK) {
                 LOCK.notifyAll();
             }
             return;
         }
         int mSourceWidth = size.x;
         int mSourceHeight = size.y;
-        synchronized (LOCK){
+        synchronized (LOCK) {
             LOCK.notifyAll();
         }
         //要求数据源提供者必须同步返回数据大小
-        if(mSourceWidth <=0|| mSourceHeight <=0){
-            error(1,"video source return inaccurate size to SurfaceTextureActuator");
+        if (mSourceWidth <= 0 || mSourceHeight <= 0) {
+            error(1, "video source return inaccurate size to SurfaceTextureActuator");
             return;
         }
 
-        if(mRenderer==null){
-            mRenderer=new WrapRenderer(null);
+        if (mRenderer == null) {
+            mRenderer = new WrapRenderer(null);
         }
-        FrameBuffer sourceFrame=new FrameBuffer();
+        FrameBuffer sourceFrame = new FrameBuffer();
         mRenderer.create();
         mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
-        mRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
+        mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
 
         //用于其他的回调
-        RenderBean rb=new RenderBean();
-        rb.egl=egl;
-        rb.sourceWidth= mSourceWidth;
-        rb.sourceHeight= mSourceHeight;
-        rb.endFlag=false;
-        rb.threadId=Thread.currentThread().getId();
-        AvLog.d(TAG,"Processor While Loop Entry");
+        RenderBean rb = new RenderBean();
+        rb.egl = egl;
+        rb.sourceWidth = mSourceWidth;
+        rb.sourceHeight = mSourceHeight;
+        rb.endFlag = false;
+        rb.threadId = Thread.currentThread().getId();
+        AvLog.d(TAG, "Processor While Loop Entry");
+        GroupFilter filter = null;
+        int lastFilterType = VideoSurfaceProcessor.ifUseRenderer;
         //要求数据源必须同步填充SurfaceTexture，填充完成前等待
-        while (!mProvider.frame()&&mGLThreadFlag){
+        while (!mProvider.frame() && mGLThreadFlag) {
             mInputSurfaceTexture.updateTexImage();
+            if(lastFilterType!=VideoSurfaceProcessor.ifUseRenderer)
+            switch (VideoSurfaceProcessor.ifUseRenderer) {
+                case 0:
+                    filter = new GroupFilter(context.getResources());
+                    filter.addFilter(new StickFigureFilter(context.getResources()));
+                    mRenderer.destroy();
+                    mRenderer = new WrapRenderer(filter);
+                    mRenderer.create();
+                    mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
+                    mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
+                    break;
+                case 1:
+                    filter = new GroupFilter(context.getResources());
+                    filter.addFilter(new BeautyFilter(context.getResources()).setBeautyLevel(4));
+                    mRenderer.destroy();
+                    mRenderer = new WrapRenderer(filter);
+                    mRenderer.create();
+                    mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
+                    mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
+                    break;
+                case 2:
+                    filter = new GroupFilter(context.getResources());
+                    filter.addFilter(new StickFigureFilter(context.getResources()));
+                    filter.addFilter(new BeautyFilter(context.getResources()).setBeautyLevel(4));
+                    mRenderer.destroy();
+                    mRenderer = new WrapRenderer(filter);
+                    mRenderer.create();
+                    mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
+                    mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
+                    break;
+                case 3:
+                    mRenderer = new WrapRenderer(null);
+                    mRenderer.create();
+                    mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
+                    mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
+                    break;
+            }
+            lastFilterType = VideoSurfaceProcessor.ifUseRenderer;
+
             mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
-            AvLog.d(TAG,"timestamp:"+ mInputSurfaceTexture.getTimestamp());
+            AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
-            GLES20.glViewport(0,0, mSourceWidth, mSourceHeight);
+            GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
             mRenderer.draw(mInputSurfaceTextureId);
             sourceFrame.unBindFrameBuffer();
-            rb.textureId=sourceFrame.getCacheTextureId();
+            rb.textureId = sourceFrame.getCacheTextureId();
             //接收数据源传入的时间戳
-            rb.timeStamp=mProvider.getTimeStamp();
-            rb.textureTime= mInputSurfaceTexture.getTimestamp();
+            rb.timeStamp = mProvider.getTimeStamp();
+            rb.textureTime = mInputSurfaceTexture.getTimestamp();
             observable.notify(rb);
         }
-        AvLog.d(TAG,"out of gl thread loop");
-        synchronized (LOCK){
-            rb.endFlag=true;
+        AvLog.d(TAG, "out of gl thread loop");
+        synchronized (LOCK) {
+            rb.endFlag = true;
             observable.notify(rb);
             mRenderer.destroy();
             destroyGL(egl);
             LOCK.notifyAll();
-            AvLog.d(TAG,"gl thread exit");
+            AvLog.d(TAG, "gl thread exit");
         }
     }
 
-    private void destroyGL(EglHelper egl){
-        mGLThreadFlag=false;
+    private void destroyGL(EglHelper egl) {
+        mGLThreadFlag = false;
         EGL14.eglMakeCurrent(egl.getDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-        EGL14.eglDestroyContext(egl.getDisplay(),egl.getDefaultContext());
+        EGL14.eglDestroyContext(egl.getDisplay(), egl.getDefaultContext());
         EGL14.eglTerminate(egl.getDisplay());
     }
 
@@ -184,7 +232,7 @@ public class VideoSurfaceProcessor{
         observable.addObserver(observer);
     }
 
-    protected void error(int id,String msg) {
+    protected void error(int id, String msg) {
 
     }
 }
