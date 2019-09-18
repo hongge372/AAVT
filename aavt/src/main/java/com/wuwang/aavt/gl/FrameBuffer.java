@@ -73,6 +73,7 @@ public class FrameBuffer {
     public int createFrameBuffer(boolean hasRenderBuffer,int width,int height,int texType,int texFormat,
                                  int minParams,int maxParams,int wrapS,int wrapT){
         mFrameTemp=new int[4];
+        //生成frame数组，1代表生成一个framebuffer
         GLES20.glGenFramebuffers(1,mFrameTemp,0);
         GLES20.glGenTextures(1,mFrameTemp,1);
         GLES20.glBindTexture(texType,mFrameTemp[1]);
