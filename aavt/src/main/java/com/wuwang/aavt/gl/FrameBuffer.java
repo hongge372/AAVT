@@ -73,10 +73,16 @@ public class FrameBuffer {
     public int createFrameBuffer(boolean hasRenderBuffer,int width,int height,int texType,int texFormat,
                                  int minParams,int maxParams,int wrapS,int wrapT){
         mFrameTemp=new int[4];
-        //生成frame数组，1代表生成一个framebuffer
+        //生成framebuffer数组，1代表生成一个framebuffer，索引存储在mFrameTemp里面，偏移量是0（索引值存储在mFrameTemp【0】）。
         GLES20.glGenFramebuffers(1,mFrameTemp,0);
+        //生成1个新的纹理，1是一个，索引存储在mframetemp里面，偏移量是1（索引值存储在mFrameTemp【1】）。
+        //这个方法只是生成一个纹理索引，真正创建纹理由下面的glTexImage2D完成。
         GLES20.glGenTextures(1,mFrameTemp,1);
+        //绑定最新生成的纹理（mFrameTemp【1】），texType是纹理类型（GL_TEXTURE_2D）。
         GLES20.glBindTexture(texType,mFrameTemp[1]);
+        //？？这里怎么区分oes纹理，和texture2d纹理？
+        //这里真正生成2d纹理。它的索引由 glGenTextures（）创建，由glBindTexture（）绑定，而且只有调用glBindTexture（）绑定后，才能调用glTexImage2D（）生成真正的纹理。
+        //！！！在调用该函数之前，必须调用glBindTexture(GL_TEXTURE_2D, mTextureID );以指定要操作的纹理ID，此处是mTextureID！！！
         GLES20.glTexImage2D(texType, 0,texFormat, width, height,
                 0, texFormat, GLES20.GL_UNSIGNED_BYTE, null);
         //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
@@ -128,6 +134,7 @@ public class FrameBuffer {
      * @return FrameBuffer绘制内容的纹理ID
      */
     public int getCacheTextureId(){
+        //返回我们在createFrameBuffer时生成的纹理，索引存储在mFrameTemp[1]中
         return mFrameTemp!=null?mFrameTemp[1]:-1;
     }
 
