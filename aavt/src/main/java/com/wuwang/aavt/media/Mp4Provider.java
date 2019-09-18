@@ -28,13 +28,20 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
+import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
+import static android.opengl.GLES20.GL_NEAREST;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
+import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
+import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
+import static android.opengl.GLES20.GL_TEXTURE_WRAP_S;
+import static android.opengl.GLES20.GL_TEXTURE_WRAP_T;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glCopyTexSubImage2D;
+import static android.opengl.GLES20.glTexParameteri;
 
 /**
  * @author wuwang
@@ -159,9 +166,11 @@ public class Mp4Provider implements ITextureProvider {
                 //int newId = GpuUtils.createTextureID(false);
                 //copyToNew(mInputSurfaceTextureId, newId);
                 MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
-                String outCopy = "/sdcard/VideoEdit/pic/pic_copy_" + saveTextureIndex + ".png";
+                String outCopy = "/sdcard/VideoEdit/pic/pic_tex_fbo_" + saveTextureIndex + ".png";
                 glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-                LVTextureSave.saveToPng(textureFrame.texId, 720, 1280, outCopy);
+                LVTextureSave.saveToPngFrameBuff(textureFrame.texId, textureFrame.fboId,720, 1280, outCopy);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 textureFrame.width = 720;
                 textureFrame.height = 1280;
                 textureFrame.nowTimeStamp = nowTimeStamp;
@@ -188,12 +197,16 @@ public class Mp4Provider implements ITextureProvider {
         }
         //绑定纹理
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[0]);
-        //环绕（超出纹理坐标范围）  （s==x t==y GL_REPEAT 重复）
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
-        //过滤（纹理像素映射到坐标点）  （缩小、放大：GL_LINEAR线性）
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+//        //环绕（超出纹理坐标范围）  （s==x t==y GL_REPEAT 重复）
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
+//        //过滤（纹理像素映射到坐标点）  （缩小、放大：GL_LINEAR线性）
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         return textureIds[0];
     }
 

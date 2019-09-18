@@ -36,6 +36,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE1;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindFramebuffer;
@@ -148,24 +149,24 @@ public class VideoSurfaceProcessor {
         }
 
         glActiveTexture(GL_TEXTURE0);
-        glBindFramebuffer(GL_FRAMEBUFFER, frame.fboId);
-
+        //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
         String out = "/sdcard/VideoEdit/pic/pic_thread_process_" + saveTextureIndex + ".png";
-        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
+//        glBindTexture(GL_TEXTURE_2D, 0);
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        sourceFrame.bindFrameBuffer(720, 1280);
-        GLES20.glViewport(0,0, 720, 1280);
-        mRenderer.draw(frame.texId);
-        sourceFrame.unBindFrameBuffer();
-        rb.textureId = sourceFrame.getCacheTextureId();
-        rb.sourceWidth = frame.width;
-        rb.sourceHeight = frame.height;
-        //接收数据源传入的时间戳
-        rb.timeStamp = frame.nowTimeStamp;
-        observable.notify(rb);
+//        sourceFrame.bindFrameBuffer(720, 1280);
+//        GLES20.glViewport(0,0, 720, 1280);
+//        mRenderer.draw(frame.texId);
+//        sourceFrame.unBindFrameBuffer();
+//        rb.textureId = sourceFrame.getCacheTextureId();
+//        rb.sourceWidth = frame.width;
+//        rb.sourceHeight = frame.height;
+//        //接收数据源传入的时间戳
+//        rb.timeStamp = frame.nowTimeStamp;
+//        observable.notify(rb);
+
         return true;
     }
 
