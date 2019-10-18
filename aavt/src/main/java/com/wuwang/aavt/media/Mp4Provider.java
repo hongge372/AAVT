@@ -147,6 +147,11 @@ public class Mp4Provider implements ITextureProvider {
                 mExtractor.advance();
             }
         }
+        //sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
+        sourceFrame.createFrameBuffer(false,mSourceWidth,mSourceHeight, GLES20.GL_TEXTURE_2D,GLES20.GL_RGBA,
+                GLES20.GL_LINEAR,GLES20.GL_LINEAR,GLES20.GL_CLAMP_TO_EDGE,GLES20.GL_CLAMP_TO_EDGE);
+        create
+
         while (true) {
             int mOutputIndex = mVideoDecoder.dequeueOutputBuffer(videoDecodeBufferInfo, TIME_OUT);
             if (mOutputIndex >= 0) {
@@ -161,9 +166,9 @@ public class Mp4Provider implements ITextureProvider {
                     LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
                 }
                 AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
-                sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
                 boolean saveWhileBind = true;
-                if (saveWhileBind) {
+                if (false) {
+                    //bindByOwn();
                     String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_" + saveTextureIndex + ".png";
                     LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
                 }
@@ -175,26 +180,26 @@ public class Mp4Provider implements ITextureProvider {
                     LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
                 }
                 saveTextureIndex++;
-                sourceFrame.unBindFrameBuffer();
-                glBindFramebuffer(GL_FRAMEBUFFER, sourceFrame.mFrameTemp[0]);
+                //sourceFrame.unBindFrameBuffer();
+                //glBindFramebuffer(GL_FRAMEBUFFER, sourceFrame.mFrameTemp[0]);
                 //String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
                 //LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, out);
                 //int newId = GpuUtils.createTextureID(false);
                 //copyToNew(mInputSurfaceTextureId, newId);
-                MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
+                //MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
                 //String outCopy = "/sdcard/VideoEdit/pic/pic_tex_fbo_" + saveTextureIndex + ".png";
                 // glBindFramebuffer(GL_FRAMEBUFFER, fboId);
                 // LVTextureSave.saveToPngFrameBuff(textureFrame.texId, textureFrame.fboId,720, 1280, outCopy);
-                glBindTexture(GL_TEXTURE_2D, 0);
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                textureFrame.width = 720;
-                textureFrame.height = 1280;
-                textureFrame.nowTimeStamp = nowTimeStamp;
-                try {
-                    texQueue.put(textureFrame);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+//                glBindTexture(GL_TEXTURE_2D, 0);
+//                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//                textureFrame.width = 720;
+//                textureFrame.height = 1280;
+//                textureFrame.nowTimeStamp = nowTimeStamp;
+//                try {
+//                    texQueue.put(textureFrame);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
             } else if (mOutputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
 
             } else if (mOutputIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
@@ -202,6 +207,28 @@ public class Mp4Provider implements ITextureProvider {
             }
         }
         return isVideoExtractorEnd || isUserWantToStop;
+    }
+
+    private void bindByOwn() {
+//        GLES20.glGenFramebuffers(1,mFrameTemp,0);
+//        GLES20.glGenTextures(1,mFrameTemp,1);
+//        Log.v(TAG, "");
+//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,mFrameTemp[1]);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 720, 1280,
+                0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        //设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        //设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+        //GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING,mFrameTemp,3);
+        //GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,mFrameTemp[0]);
+        //GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+        //        texType, mFrameTemp[1], 0);
     }
 
     private int createTexture() {
