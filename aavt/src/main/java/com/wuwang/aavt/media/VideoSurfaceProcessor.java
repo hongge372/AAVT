@@ -160,7 +160,7 @@ public class VideoSurfaceProcessor {
         //glActiveTexture(GL_TEXTURE0);
         //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
-        String out = "/sdcard/VideoEdit/pic/pic_thread_yaya_" + saveTextureIndex + ".png";
+        String out = "/sdcard/VideoEdit/pic/pic_thread_framebuff_only_" + saveTextureIndex + ".png";
         LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
         //LVTextureSave.saveToPng(mFrameTemp[1], 720, 1280, out);
        // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
