@@ -41,6 +41,7 @@ import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glCopyTexSubImage2D;
+import static android.opengl.GLES20.glCullFace;
 import static android.opengl.GLES20.glTexParameteri;
 
 /**
@@ -154,10 +155,25 @@ public class Mp4Provider implements ITextureProvider {
                 //mFrameSem.release();
                 mInputSurfaceTexture.updateTexImage();
                 mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
+                boolean saveWhileUpdate = false;
+                if (saveWhileUpdate) {
+                    String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_" + saveTextureIndex + ".png";
+                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
+                }
                 AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
                 sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
+                boolean saveWhileBind = true;
+                if (saveWhileBind) {
+                    String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_" + saveTextureIndex + ".png";
+                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
+                }
                 GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
                 mRenderer.draw(mInputSurfaceTextureId);
+                boolean saveAfterDraw = true;
+                if (saveAfterDraw) {
+                    String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_draw_" + saveTextureIndex + ".png";
+                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
+                }
                 saveTextureIndex++;
                 sourceFrame.unBindFrameBuffer();
                 glBindFramebuffer(GL_FRAMEBUFFER, sourceFrame.mFrameTemp[0]);
@@ -166,9 +182,9 @@ public class Mp4Provider implements ITextureProvider {
                 //int newId = GpuUtils.createTextureID(false);
                 //copyToNew(mInputSurfaceTextureId, newId);
                 MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
-                String outCopy = "/sdcard/VideoEdit/pic/pic_tex_fbo_" + saveTextureIndex + ".png";
-                glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-                LVTextureSave.saveToPngFrameBuff(textureFrame.texId, textureFrame.fboId,720, 1280, outCopy);
+                //String outCopy = "/sdcard/VideoEdit/pic/pic_tex_fbo_" + saveTextureIndex + ".png";
+                // glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+                // LVTextureSave.saveToPngFrameBuff(textureFrame.texId, textureFrame.fboId,720, 1280, outCopy);
                 glBindTexture(GL_TEXTURE_2D, 0);
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 textureFrame.width = 720;
@@ -211,6 +227,7 @@ public class Mp4Provider implements ITextureProvider {
     }
 
     private int fboId;
+
     private MyTextureFrame copyToNew(int oldTex, int oldFboId) {
         int[] fbos = new int[1];
         GLES20.glGenFramebuffers(1, fbos, 0);

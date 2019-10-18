@@ -14,6 +14,7 @@
 package com.wuwang.aavt.gl;
 
 import android.opengl.GLES20;
+import android.util.Log;
 
 /**
  * FrameBuffer 工具类
@@ -22,7 +23,7 @@ import android.opengl.GLES20;
  * @version v1.0 2017:10:31 10:31
  */
 public class FrameBuffer {
-
+    private final String TAG = getClass().getName();
     public int[] mFrameTemp;
     private int lastWidth=0,lastHeight=0;
 
@@ -75,6 +76,7 @@ public class FrameBuffer {
         mFrameTemp=new int[4];
         GLES20.glGenFramebuffers(1,mFrameTemp,0);
         GLES20.glGenTextures(1,mFrameTemp,1);
+        Log.v(TAG, "");
         GLES20.glBindTexture(texType,mFrameTemp[1]);
         GLES20.glTexImage2D(texType, 0,texFormat, width, height,
                 0, texFormat, GLES20.GL_UNSIGNED_BYTE, null);
