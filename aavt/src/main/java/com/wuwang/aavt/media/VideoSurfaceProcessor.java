@@ -35,6 +35,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
+import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE1;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
@@ -104,6 +105,11 @@ public class VideoSurfaceProcessor {
     private int saveTextureIndex = 1;
     FrameBuffer sourceFrame;
     private void createEGL() {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         egl = new EglHelper();
         boolean ret = egl.createGLESWithSurface(new EGLConfigAttrs(), new EGLContextAttrs(), new SurfaceTexture(1));
         if (!ret) {
@@ -147,12 +153,15 @@ public class VideoSurfaceProcessor {
         if (frame.endFlg) {
             return false;
         }
-
-        glActiveTexture(GL_TEXTURE0);
+        createMyOwn();
+        GLES20.glViewport(0, 0, 720, 1280);
+        mRenderer.draw(frame.texId);
+        //glActiveTexture(GL_TEXTURE0);
         //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
         String out = "/sdcard/VideoEdit/pic/pic_thread_process_" + saveTextureIndex + ".png";
-        LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
+        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+       // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
 //        glBindTexture(GL_TEXTURE_2D, 0);
 //        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -168,6 +177,32 @@ public class VideoSurfaceProcessor {
 //        observable.notify(rb);
 
         return true;
+    }
+
+    int mFrameTemp[];
+    private int createMyOwn(){
+        mFrameTemp = new int[4];
+        GLES20.glGenFramebuffers(1, mFrameTemp, 0);
+        GLES20.glGenTextures(1, mFrameTemp, 1);
+        Log.v(TAG, "");
+        GLES20.glBindTexture(GL_TEXTURE_2D, mFrameTemp[1]);
+        GLES20.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 720, 1280,
+                0, GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        //设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        //设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, mFrameTemp, 3);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameTemp[0]);
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, mFrameTemp[1], 0);
+
+        return GLES20.glGetError();
     }
 
     private void destroyGL(EglHelper egl) {

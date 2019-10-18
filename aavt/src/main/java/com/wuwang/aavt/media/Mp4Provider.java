@@ -162,8 +162,8 @@ public class Mp4Provider implements ITextureProvider {
                 mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
                 boolean saveWhileUpdate = true;
                 if (saveWhileUpdate) {
-                    String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_" + saveTextureIndex + ".png";
-                    LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
+                  //  String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_" + saveTextureIndex + ".png";
+                  //  LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
                 }
                 AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
                 GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
@@ -175,6 +175,16 @@ public class Mp4Provider implements ITextureProvider {
                     int toSave = mFrameTemp[1];
                     Log.v(TAG, "be save tex" + toSave);
                     LVTextureSave.saveToPng(toSave, 720, 1280, outCopy);
+                    MyTextureFrame textureFrame = new MyTextureFrame();
+                    textureFrame.texId = toSave;
+                    textureFrame.width = 720;
+                    textureFrame.height = 1280;
+                    textureFrame.nowTimeStamp = nowTimeStamp;
+                    try {
+                        texQueue.put(textureFrame);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 glBindTexture(GL_TEXTURE_2D, 0);
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -381,7 +391,7 @@ public class Mp4Provider implements ITextureProvider {
         if (mRenderer == null) {
             mRenderer = new WrapRenderer(null);
         }
-        sourceFrame = new FrameBuffer();
+       // sourceFrame = new FrameBuffer();
         mRenderer.create();
         mRenderer.sizeChanged(mSourceWidth, mSourceHeight);
         mRenderer.setFlag(WrapRenderer.TYPE_MOVE);
