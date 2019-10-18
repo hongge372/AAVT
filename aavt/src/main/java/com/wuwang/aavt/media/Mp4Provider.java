@@ -31,6 +31,7 @@ import java.util.concurrent.Semaphore;
 import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_NEAREST;
+import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
@@ -148,9 +149,9 @@ public class Mp4Provider implements ITextureProvider {
             }
         }
         //sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
-        sourceFrame.createFrameBuffer(false,mSourceWidth,mSourceHeight, GLES20.GL_TEXTURE_2D,GLES20.GL_RGBA,
-                GLES20.GL_LINEAR,GLES20.GL_LINEAR,GLES20.GL_CLAMP_TO_EDGE,GLES20.GL_CLAMP_TO_EDGE);
-        create
+        //sourceFrame.createFrameBuffer(false,mSourceWidth,mSourceHeight, GLES20.GL_TEXTURE_2D,GLES20.GL_RGBA,
+        //        GLES20.GL_LINEAR,GLES20.GL_LINEAR,GLES20.GL_CLAMP_TO_EDGE,GLES20.GL_CLAMP_TO_EDGE);
+        createMyOwn();
 
         while (true) {
             int mOutputIndex = mVideoDecoder.dequeueOutputBuffer(videoDecodeBufferInfo, TIME_OUT);
@@ -209,13 +210,39 @@ public class Mp4Provider implements ITextureProvider {
         return isVideoExtractorEnd || isUserWantToStop;
     }
 
+    int mFrameTemp[];
+    private int createMyOwn() {
+        mFrameTemp=new int[4];
+        GLES20.glGenFramebuffers(1,mFrameTemp,0);
+        GLES20.glGenTextures(1,mFrameTemp,1);
+        Log.v(TAG, "");
+        GLES20.glBindTexture(GL_TEXTURE_2D,mFrameTemp[1]);
+        GLES20.glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA, mSourceWidth, mSourceHeight,
+                0, GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,GLES20.GL_LINEAR);
+        //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER,GLES20.GL_LINEAR);
+        //设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,GLES20.GL_CLAMP_TO_EDGE);
+        //设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+        GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,GLES20.GL_CLAMP_TO_EDGE);
+
+        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING,mFrameTemp,3);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,mFrameTemp[0]);
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, mFrameTemp[1], 0);
+
+        return GLES20.glGetError();
+    }
+
     private void bindByOwn() {
 //        GLES20.glGenFramebuffers(1,mFrameTemp,0);
 //        GLES20.glGenTextures(1,mFrameTemp,1);
 //        Log.v(TAG, "");
 //        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,mFrameTemp[1]);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 720, 1280,
-                0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GL_RGBA, 720, 1280,
+                0, GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
         //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
         GLES20.glTexParameteri(GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
@@ -265,8 +292,8 @@ public class Mp4Provider implements ITextureProvider {
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
                 GLES20.GL_TEXTURE_2D, newTexId, 0);
         // 设置内存大小
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 720, 1280,
-                0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GL_RGBA, 720, 1280,
+                0, GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
         //6. 检测是否绑定从成功
         if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
                 != GLES20.GL_FRAMEBUFFER_COMPLETE) {
