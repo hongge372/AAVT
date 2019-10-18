@@ -155,12 +155,13 @@ public class VideoSurfaceProcessor {
         }
         createMyOwn();
         GLES20.glViewport(0, 0, 720, 1280);
-        mRenderer.draw(frame.texId);
+        //mRenderer.draw(frame.texId);
         //glActiveTexture(GL_TEXTURE0);
         //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
-        String out = "/sdcard/VideoEdit/pic/pic_thread_process_" + saveTextureIndex + ".png";
+        String out = "/sdcard/VideoEdit/pic/pic_thread_yaya_" + saveTextureIndex + ".png";
         LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+        //LVTextureSave.saveToPng(mFrameTemp[1], 720, 1280, out);
        // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
 //        glBindTexture(GL_TEXTURE_2D, 0);
 //        glBindFramebuffer(GL_FRAMEBUFFER, 0);

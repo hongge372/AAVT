@@ -174,7 +174,7 @@ public class Mp4Provider implements ITextureProvider {
                     String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_draw_" + saveTextureIndex + ".png";
                     int toSave = mFrameTemp[1];
                     Log.v(TAG, "be save tex" + toSave);
-                    LVTextureSave.saveToPng(toSave, 720, 1280, outCopy);
+                    //LVTextureSave.saveToPng(toSave, 720, 1280, outCopy);
                     MyTextureFrame textureFrame = new MyTextureFrame();
                     textureFrame.texId = toSave;
                     textureFrame.width = 720;
