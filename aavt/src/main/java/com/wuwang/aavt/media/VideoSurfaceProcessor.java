@@ -34,6 +34,7 @@ import com.wuwang.aavt.utils.GpuUtils;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE0;
@@ -153,15 +154,15 @@ public class VideoSurfaceProcessor {
         if (frame.endFlg) {
             return false;
         }
-        createMyOwn2();
+        createMyOwn2(frame.texId);
         GLES20.glBindTexture(GL_TEXTURE_2D, frame.texId);
         GLES20.glViewport(0, 0, 720, 1280);
         //mRenderer.draw(frame.texId);
         //glActiveTexture(GL_TEXTURE0);
         //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
-        String out = "/sdcard/VideoEdit/pic/pic_thread_framebuff_only_" + saveTextureIndex + ".png";
-        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+        String out = "/sdcard/VideoEdit/pic/pic_thread_new_framebuff_only_" + saveTextureIndex + ".png";
+        LVTextureSave.onlySaveToPng(frame.texId, 720, 1280, out);
         //LVTextureSave.saveToPng(mFrameTemp[1], 720, 1280, out);
        // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
 //        glBindTexture(GL_TEXTURE_2D, 0);
@@ -201,13 +202,13 @@ public class VideoSurfaceProcessor {
 
         GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, mFrameTemp, 3);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameTemp[0]);
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                 GL_TEXTURE_2D, mFrameTemp[1], 0);
 
         return GLES20.glGetError();
     }
 
-    private int createMyOwn2(){
+    private int createMyOwn2(int texID){
         mFrameTemp = new int[4];
         GLES20.glGenFramebuffers(1, mFrameTemp, 0);
         //GLES20.glGenTextures(1, mFrameTemp, 1);
@@ -226,6 +227,8 @@ public class VideoSurfaceProcessor {
 
         GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, mFrameTemp, 3);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameTemp[0]);
+        GLES20.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texID, 0);
+
         //GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
         //        GL_TEXTURE_2D, mFrameTemp[1], 0);
 
