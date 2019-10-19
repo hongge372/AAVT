@@ -105,6 +105,7 @@ public class VideoSurfaceProcessor {
 
     private int saveTextureIndex = 1;
     FrameBuffer sourceFrame;
+
     private void createEGL() {
         try {
             Thread.sleep(2000);
@@ -117,13 +118,13 @@ public class VideoSurfaceProcessor {
             //todo 错误处理
             return;
         }
-        if(mRenderer==null){
-            mRenderer=new WrapRenderer(null);
+        if (mRenderer == null) {
+            mRenderer = new WrapRenderer(null);
         }
-         sourceFrame=new FrameBuffer();
+        sourceFrame = new FrameBuffer();
         mRenderer.create();
         mRenderer.sizeChanged(720, 1280);
-        mRenderer.setFlag(mProvider.isLandscape()?WrapRenderer.TYPE_CAMERA:WrapRenderer.TYPE_MOVE);
+        mRenderer.setFlag(mProvider.isLandscape() ? WrapRenderer.TYPE_CAMERA : WrapRenderer.TYPE_MOVE);
 
     }
 
@@ -140,7 +141,9 @@ public class VideoSurfaceProcessor {
                 e.printStackTrace();
             }
         }
+        sourceFrame.bindFrameBuffer(720, 1280);
         while (getFrameEncode2()) ;
+        sourceFrame.unBindFrameBuffer();
     }
 
 
@@ -162,28 +165,28 @@ public class VideoSurfaceProcessor {
         //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
         String out = "/sdcard/VideoEdit/pic/pic_thread_new_framebuff_only_" + saveTextureIndex + ".png";
-        LVTextureSave.onlySaveToPng(frame.texId, 720, 1280, out);
+        //LVTextureSave.onlySaveToPng(frame.texId, 720, 1280, out);
         //LVTextureSave.saveToPng(mFrameTemp[1], 720, 1280, out);
-       // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
+        // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
 //        glBindTexture(GL_TEXTURE_2D, 0);
 //        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-//        sourceFrame.bindFrameBuffer(720, 1280);
-//        GLES20.glViewport(0,0, 720, 1280);
-//        mRenderer.draw(frame.texId);
-//        sourceFrame.unBindFrameBuffer();
-//        rb.textureId = sourceFrame.getCacheTextureId();
-//        rb.sourceWidth = frame.width;
-//        rb.sourceHeight = frame.height;
-//        //接收数据源传入的时间戳
-//        rb.timeStamp = frame.nowTimeStamp;
-//        observable.notify(rb);
+        GLES20.glViewport(0, 0, 720, 1280);
+        mRenderer.draw(frame.texId);
+        rb.textureId = sourceFrame.getCacheTextureId();
+        //rb.textureId = frame.texId;
+        rb.sourceWidth = frame.width;
+        rb.sourceHeight = frame.height;
+        //接收数据源传入的时间戳
+        rb.timeStamp = frame.nowTimeStamp;
+        observable.notify(rb);
 
         return true;
     }
 
     int mFrameTemp[];
-    private int createMyOwn(){
+
+    private int createMyOwn() {
         mFrameTemp = new int[4];
         GLES20.glGenFramebuffers(1, mFrameTemp, 0);
         GLES20.glGenTextures(1, mFrameTemp, 1);
@@ -208,7 +211,7 @@ public class VideoSurfaceProcessor {
         return GLES20.glGetError();
     }
 
-    private int createMyOwn2(int texID){
+    private int createMyOwn2(int texID) {
         mFrameTemp = new int[4];
         GLES20.glGenFramebuffers(1, mFrameTemp, 0);
         //GLES20.glGenTextures(1, mFrameTemp, 1);
