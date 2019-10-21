@@ -85,10 +85,18 @@ public class SurfaceShower implements IObserver<RenderBean> {
                 rb.egl.destroySurface(mShowSurface);
                 mShowSurface = null;
             } else if (isShow && mSurface != null) {
+                if (mShowSurface == null) {
+                    mShowSurface = rb.egl.createWindowSurface(mSurface);
+                    mFilter = new LazyFilter();
+                    mFilter.create();
+                    mFilter.sizeChanged(rb.sourceWidth, rb.sourceHeight);
+                    MatrixUtils.getMatrix(mFilter.getVertexMatrix(), mMatrixType, rb.sourceWidth, rb.sourceHeight,
+                            mWidth, mHeight);
+                }
                 //createMyOwn2(rb.textureId);
                 GLES20.glBindTexture(GL_TEXTURE_2D, rb.textureId);
                 GLES20.glViewport(0, 0, mWidth, mHeight);
-                String out = "/sdcard/VideoEdit/pic/pic_shower_" + saveTextureIndex + ".png";
+                String out = "/sdcard/VideoEdit/pic/pic_shower_haha_" + saveTextureIndex + ".png";
                 LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
                 saveTextureIndex++;
             }
