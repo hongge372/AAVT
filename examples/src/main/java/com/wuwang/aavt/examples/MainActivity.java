@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
+import mygl.GLMainActivity;
+
 public class MainActivity extends AppCompatActivity {
 
     private PermissionAsker mAsker;
@@ -48,6 +50,10 @@ public class MainActivity extends AppCompatActivity {
             case R.id.mYuvExport:
                 startActivity(new Intent(this,YuvExportActivity.class));
                 break;
+            case R.id.glrun:
+                Intent intent = new Intent();
+                intent.setClass(getApplicationContext(), GLMainActivity.class);
+                startActivity(intent);
             default:break;
         }
     }
