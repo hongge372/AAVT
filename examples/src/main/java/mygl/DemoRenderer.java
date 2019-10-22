@@ -54,8 +54,16 @@ class DemoRenderer implements GLSurfaceView.Renderer {
         System.arraycopy(mTmpMatrix, 0, mProjectionMatrix, 0, mTmpMatrix.length);
     }
 
+    private int index = 0;
+
     @Override
     public void onDrawFrame(GL10 unused) {
+        index++;
+        int flg = index/10;
+        if(flg%2==0){
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+            return;
+        }
         // Clear the rendering surface.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
