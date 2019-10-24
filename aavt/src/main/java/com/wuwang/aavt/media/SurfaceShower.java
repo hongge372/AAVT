@@ -80,7 +80,7 @@ public class SurfaceShower implements IObserver<RenderBean> {
 
     @Override
     public void onCall(RenderBean rb) {
-        if (true) {
+        if (false) {
             if (rb.endFlag && mShowSurface != null) {
                 rb.egl.destroySurface(mShowSurface);
                 mShowSurface = null;
@@ -114,18 +114,18 @@ public class SurfaceShower implements IObserver<RenderBean> {
                 MatrixUtils.getMatrix(mFilter.getVertexMatrix(), mMatrixType, rb.sourceWidth, rb.sourceHeight,
                         mWidth, mHeight);
             }
-            //rb.egl.makeCurrent(mShowSurface);
+            rb.egl.makeCurrent(mShowSurface);
             //createMyOwn2(rb.textureId);
             GLES20.glBindTexture(GL_TEXTURE_2D, rb.textureId);
             GLES20.glViewport(0, 0, mWidth, mHeight);
             String out = "/sdcard/VideoEdit/pic/pic_shower_" + saveTextureIndex + ".png";
             LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
             saveTextureIndex++;
-//            mFilter.draw(rb.textureId);
-//            if(mListener!=null){
-//                mListener.onDrawEnd(mShowSurface,rb);
-//            }
-//            rb.egl.swapBuffers(mShowSurface);
+            mFilter.draw(rb.textureId);
+            if(mListener!=null){
+                mListener.onDrawEnd(mShowSurface,rb);
+            }
+            rb.egl.swapBuffers(mShowSurface);
             glBindTexture(GL_TEXTURE_2D, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }

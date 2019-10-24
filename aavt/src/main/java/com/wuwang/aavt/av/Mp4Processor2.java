@@ -90,7 +90,7 @@ public class Mp4Processor2 {
                 mMp4Provider.open(null);
             }
         }).start();
-        //mTextureProcessor.start();
+        mTextureProcessor.start();
     }
 
     public void close(){
