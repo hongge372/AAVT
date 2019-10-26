@@ -29,7 +29,7 @@ public class ExampleMp4ProcessActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mp4);
         mMp4Processor=new Mp4Processor2();
-        mMp4Processor.setInputPath(Environment.getExternalStorageDirectory().getAbsolutePath()+"/a.mp4");
+        //mMp4Processor.setInputPath(Environment.getExternalStorageDirectory().getAbsolutePath()+"/a.mp4");
         mMp4Processor.setOutputPath(tempPath);
         mSurfaceView= (SurfaceView) findViewById(R.id.mSurfaceView);
         mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
