@@ -41,6 +41,8 @@ public class EglHelper {
     private EGLConfig mEGLConfig;
     private EGLContext mEGLContext;
     private EGLSurface mEGLSurface;
+    private static Object shareLock =  new Object();
+
 
     public EglHelper(int display){
         changeDisplay(display);
@@ -107,23 +109,25 @@ public class EglHelper {
         return EGL14.eglCreatePbufferSurface(mEGLDisplay,config,new int[]{EGL14.EGL_WIDTH,width,EGL14.EGL_HEIGHT,height,EGL14.EGL_NONE},0);
     }
 
-    public synchronized boolean createGLESWithSurface(EGLConfigAttrs attrs,EGLContextAttrs ctxAttrs,Object surface){
+    public  boolean createGLESWithSurface(EGLConfigAttrs attrs,EGLContextAttrs ctxAttrs,Object surface){
         EGLConfig config=getConfig(attrs.surfaceType(EGL14.EGL_WINDOW_BIT).makeDefault(true));
         if(config==null){
             log("getConfig failed : "+EGL14.eglGetError());
             return false;
         }
-        if(shareContext==null){
-            shareContext = mEGLContext=createContext(config,EGL14.EGL_NO_CONTEXT,ctxAttrs.makeDefault(true));
-            if(mEGLContext==EGL14.EGL_NO_CONTEXT){
-                log("createContext failed : "+EGL14.eglGetError());
-                return false;
-            }
-        }else {
-            mEGLContext=createContext(config, shareContext,ctxAttrs.makeDefault(true));
-            if(mEGLContext==EGL14.EGL_NO_CONTEXT){
-                log("createContext failed : "+EGL14.eglGetError());
-                return false;
+        synchronized (shareLock){
+            if(shareContext==null){
+                shareContext = mEGLContext=createContext(config,EGL14.EGL_NO_CONTEXT,ctxAttrs.makeDefault(true));
+                if(mEGLContext==EGL14.EGL_NO_CONTEXT){
+                    log("createContext failed : "+EGL14.eglGetError());
+                    return false;
+                }
+            }else {
+                mEGLContext=createContext(config, shareContext,ctxAttrs.makeDefault(true));
+                if(mEGLContext==EGL14.EGL_NO_CONTEXT){
+                    log("createContext failed : "+EGL14.eglGetError());
+                    return false;
+                }
             }
         }
 
