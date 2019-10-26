@@ -107,10 +107,8 @@ public class VideoSurfaceProcessor{
             //todo 错误处理
             return;
         }
-        int mInputSurfaceTextureId = GpuUtils.createTextureID(true);
-        SurfaceTexture mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
 
-        Point size=mProvider.open(mInputSurfaceTexture);
+        Point size=mProvider.open(null);
         AvLog.d(TAG,"Provider Opened . data size (x,y)="+size.x+"/"+size.y);
         if(size.x<=0||size.y<=0){
             //todo 错误处理
@@ -149,17 +147,17 @@ public class VideoSurfaceProcessor{
         AvLog.d(TAG,"Processor While Loop Entry");
         //要求数据源必须同步填充SurfaceTexture，填充完成前等待
         while (!mProvider.frame()&&mGLThreadFlag){
-            mInputSurfaceTexture.updateTexImage();
-            mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
-            AvLog.d(TAG,"timestamp:"+ mInputSurfaceTexture.getTimestamp());
+            Mp4Provider.mInputSurfaceTexture.updateTexImage();
+            Mp4Provider.mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
+            AvLog.d(TAG,"timestamp:"+ Mp4Provider.mInputSurfaceTexture.getTimestamp());
             sourceFrame.bindFrameBuffer(mSourceWidth, mSourceHeight);
             GLES20.glViewport(0,0, mSourceWidth, mSourceHeight);
-            mRenderer.draw(mInputSurfaceTextureId);
+            mRenderer.draw(Mp4Provider.mInputSurfaceTextureId);
             sourceFrame.unBindFrameBuffer();
             rb.textureId=sourceFrame.getCacheTextureId();
             //接收数据源传入的时间戳
             rb.timeStamp=mProvider.getTimeStamp();
-            rb.textureTime= mInputSurfaceTexture.getTimestamp();
+            rb.textureTime= Mp4Provider.mInputSurfaceTexture.getTimestamp();
             observable.notify(rb);
         }
         AvLog.d(TAG,"out of gl thread loop");

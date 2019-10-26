@@ -15,6 +15,7 @@ import com.wuwang.aavt.log.AvLog;
 import com.wuwang.aavt.media.av.AvException;
 import com.wuwang.aavt.media.hard.HardMediaData;
 import com.wuwang.aavt.media.hard.IHardStore;
+import com.wuwang.aavt.utils.GpuUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -221,8 +222,14 @@ public class Mp4Provider implements ITextureProvider {
         return isTimeEnd;
     }
 
+    static public int mInputSurfaceTextureId;
+    static public SurfaceTexture mInputSurfaceTexture;
     @Override
     public Point open(SurfaceTexture surface) {
+         mInputSurfaceTextureId = GpuUtils.createTextureID(true);
+         mInputSurfaceTexture = new SurfaceTexture(mInputSurfaceTextureId);
+        surface = mInputSurfaceTexture;
+
         try {
             if(!extractMedia()){
                 return new Point(0,0);
