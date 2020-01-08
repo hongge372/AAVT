@@ -94,19 +94,19 @@ public class CameraRecorderActivity extends AppCompatActivity{
                     mCamera.startRecord();
                 }else{
                     mCamera.stopRecord();
-                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Intent v=new Intent(Intent.ACTION_VIEW);
-                            v.setDataAndType(Uri.parse(tempPath),"video/mp4");
-                            if(v.resolveActivity(getPackageManager()) != null){
-                                startActivity(v);
-                            }else{
-                                Toast.makeText(CameraRecorderActivity.this,
-                                        "无法找到默认媒体软件打开:"+tempPath, Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    },1000);
+//                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            Intent v=new Intent(Intent.ACTION_VIEW);
+//                            v.setDataAndType(Uri.parse(tempPath),"video/mp4");
+//                            if(v.resolveActivity(getPackageManager()) != null){
+//                                startActivity(v);
+//                            }else{
+//                                Toast.makeText(CameraRecorderActivity.this,
+//                                        "无法找到默认媒体软件打开:"+tempPath, Toast.LENGTH_SHORT).show();
+//                            }
+//                        }
+//                    },1000);
                 }
                 break;
                 default:

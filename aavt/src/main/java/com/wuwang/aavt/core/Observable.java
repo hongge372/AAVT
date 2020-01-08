@@ -28,6 +28,7 @@ public class Observable<Type> implements IObservable<Type> {
     @Override
     public void notify(Type type) {
         for (IObserver<Type> t:temp){
+            if(t!=null)
             t.onCall(type);
         }
     }
