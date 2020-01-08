@@ -42,25 +42,16 @@ public class CameraRecorder2 {
     private SoundRecorder mSoundRecord;
 
     public CameraRecorder2(){
-        //用于视频混流和存储
-        mMuxer=new StrengthenMp4MuxStore(true);
 
         //用于预览图像
         mShower=new SurfaceShower();
         mShower.setOutputSize(720,1280);
 
-        //用于编码图像
-        mSurfaceStore=new SurfaceEncoder();
-        mSurfaceStore.setStore(mMuxer);
-
-        //用于音频
-        mSoundRecord=new SoundRecorder(mMuxer);
 
         //用于处理视频图像
         mTextureProcessor=new VideoSurfaceProcessor();
         mTextureProcessor.setTextureProvider(mCameraProvider=new CameraProvider());
         mTextureProcessor.addObserver(mShower);
-        mTextureProcessor.addObserver(mSurfaceStore);
     }
 
     public void setRenderer(Renderer renderer){
@@ -80,8 +71,9 @@ public class CameraRecorder2 {
      * 设置录制的输出路径
      * @param path 输出路径
      */
+    private String  path=null;
     public void setOutputPath(String path){
-        mMuxer.setOutputPath(path);
+        this.path=path;
     }
 
     /**
@@ -126,6 +118,17 @@ public class CameraRecorder2 {
      * 开始录制
      */
     public void startRecord(){
+        //用于视频混流和存储
+        mMuxer=new StrengthenMp4MuxStore(true);
+        mMuxer.setOutputPath(path);
+
+        //用于编码图像
+        mSurfaceStore=new SurfaceEncoder();
+        mSurfaceStore.setStore(mMuxer);
+        //用于音频
+        mSoundRecord=new SoundRecorder(mMuxer);
+        //编码回调
+        mTextureProcessor.addObserver(mSurfaceStore);
         mSurfaceStore.open();
         mSoundRecord.start();
     }
