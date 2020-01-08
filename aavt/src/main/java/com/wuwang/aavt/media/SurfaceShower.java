@@ -37,6 +37,8 @@ import static android.opengl.GLES20.glBindTexture;
  * @version v1.0 2017:10:27 08:53
  */
 public class SurfaceShower implements IObserver<RenderBean> {
+    private boolean saveShowerTexPic = false;
+
     private String TAG = getClass().getName();
     private EGLSurface mShowSurface;
     private boolean isShow = false;
@@ -93,7 +95,6 @@ public class SurfaceShower implements IObserver<RenderBean> {
                     MatrixUtils.getMatrix(mFilter.getVertexMatrix(), mMatrixType, rb.sourceWidth, rb.sourceHeight,
                             mWidth, mHeight);
                 }
-                //createMyOwn2(rb.textureId);
                 GLES20.glBindTexture(GL_TEXTURE_2D, rb.textureId);
                 GLES20.glViewport(0, 0, mWidth, mHeight);
                 String out = "/sdcard/VideoEdit/pic/pic_shower_haha_" + saveTextureIndex + ".png";
@@ -115,15 +116,16 @@ public class SurfaceShower implements IObserver<RenderBean> {
                         mWidth, mHeight);
             }
             rb.egl.makeCurrent(mShowSurface);
-            //createMyOwn2(rb.textureId);
-            GLES20.glBindTexture(GL_TEXTURE_2D, rb.textureId);
-            GLES20.glViewport(0, 0, mWidth, mHeight);
-            String out = "/sdcard/VideoEdit/pic/pic_shower_" + saveTextureIndex + ".png";
-            LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
-            saveTextureIndex++;
+            if (saveShowerTexPic) {
+                GLES20.glBindTexture(GL_TEXTURE_2D, rb.textureId);
+                GLES20.glViewport(0, 0, mWidth, mHeight);
+                String out = "/sdcard/VideoEdit/pic/pic_shower_" + saveTextureIndex + ".png";
+                LVTextureSave.saveToPng(rb.textureId, 720, 1280, out);
+                saveTextureIndex++;
+            }
             mFilter.draw(rb.textureId);
-            if(mListener!=null){
-                mListener.onDrawEnd(mShowSurface,rb);
+            if (mListener != null) {
+                mListener.onDrawEnd(mShowSurface, rb);
             }
             rb.egl.swapBuffers(mShowSurface);
             glBindTexture(GL_TEXTURE_2D, 0);

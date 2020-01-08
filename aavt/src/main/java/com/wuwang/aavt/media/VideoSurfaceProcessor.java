@@ -54,6 +54,8 @@ import static android.opengl.GLES20.glCopyTexSubImage2D;
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 public class VideoSurfaceProcessor {
+    private boolean saveIntoPic = false;
+
     private String TAG = getClass().getSimpleName();
 
     private boolean mGLThreadFlag = false;
@@ -157,35 +159,19 @@ public class VideoSurfaceProcessor {
         if (frame.endFlg) {
             return false;
         }
-        //createMyOwn2(frame.texId);
         GLES20.glBindTexture(GL_TEXTURE_2D, frame.texId);
         GLES20.glViewport(0, 0, 720, 1280);
-        //mRenderer.draw(frame.texId);
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_2D, frame.texId);
         saveTextureIndex++;
-        String out = "/sdcard/VideoEdit/pic/new_process_only_" + saveTextureIndex + ".png";
-        //LVTextureSave.onlySaveToPng(frame.texId, 720, 1280, out);
-        //LVTextureSave.saveToPng(mFrameTemp[1], 720, 1280, out);
-        LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
-//        // LVTextureSave.saveToPngFrameBuff(frame.texId, frame.fboId,720, 1280, out);
-//        //unbindTexture();
-//
-//        //GLES20.glViewport(0, 0, 720, 1280);
-//        //mRenderer.draw(frame.texId);
-//        String out2 = "/sdcard/VideoEdit/pic/pic_renderer_" + saveTextureIndex + ".png";
-//        //black
-//        //LVTextureSave.saveToPng(frame.texId, 720, 1280, out2);
-//        //LVTextureSave.saveToPng(sourceFrame.getCacheTextureId(), 720, 1280, out2);
-
-        //rb.textureId = sourceFrame.getCacheTextureId();
+        if(saveIntoPic){
+            String out = "/sdcard/VideoEdit/pic/new_process_only_" + saveTextureIndex + ".png";
+            LVTextureSave.saveToPng(frame.texId, 720, 1280, out);
+        }
         rb.textureId = frame.texId;
         rb.sourceWidth = frame.width;
         rb.sourceHeight = frame.height;
         //接收数据源传入的时间戳
         rb.timeStamp = frame.nowTimeStamp;
         observable.notify(rb);
-        //unbindTexture();
         return true;
     }
 

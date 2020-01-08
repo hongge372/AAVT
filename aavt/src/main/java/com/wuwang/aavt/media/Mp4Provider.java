@@ -162,21 +162,12 @@ public class Mp4Provider implements ITextureProvider {
                 mInputSurfaceTexture.updateTexImage();
                 mInputSurfaceTexture.getTransformMatrix(mRenderer.getTextureMatrix());
                 boolean saveWhileUpdate = true;
-                if (saveWhileUpdate) {
-                  //  String outCopy = "/sdcard/VideoEdit/pic/pic_tex_2d_" + saveTextureIndex + ".png";
-                  //  LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, outCopy);
-                }
                 AvLog.d(TAG, "timestamp:" + mInputSurfaceTexture.getTimestamp());
                 GLES20.glViewport(0, 0, mSourceWidth, mSourceHeight);
-                //createMyOwn();
                 mRenderer.draw(mInputSurfaceTextureId);
 
                 boolean saveAfterDraw = true;
                 if (saveAfterDraw) {
-                    //String outCopy = "/sdcard/VideoEdit/pic/pic_tex_decode_" + saveTextureIndex + ".png";
-                    //int toSave = mFrameTemp[1];
-                    //Log.v(TAG, "be save tex" + toSave);
-                    //LVTextureSave.saveToPng(toSave, 720, 1280, outCopy);
                     MyTextureFrame textureFrame = new MyTextureFrame();
                     textureFrame.texId = sourceFrame.getCacheTextureId();
                     textureFrame.width = 720;
@@ -187,32 +178,8 @@ public class Mp4Provider implements ITextureProvider {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    String outCopy = "/sdcard/VideoEdit/pic/pic_queue_" + saveTextureIndex + ".png";
-                    LVTextureSave.saveToPng(sourceFrame.getCacheTextureId(), 720, 1280, outCopy);
-
                 }
-                //glBindTexture(GL_TEXTURE_2D, 0);
-                //glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 saveTextureIndex++;
-                //glBindFramebuffer(GL_FRAMEBUFFER, sourceFrame.mFrameTemp[0]);
-                //String out = "/sdcard/VideoEdit/pic/pic_orig_" + saveTextureIndex + ".png";
-                //LVTextureSave.saveToPng(mInputSurfaceTextureId, 720, 1280, out);
-                //int newId = GpuUtils.createTextureID(false);
-                //copyToNew(mInputSurfaceTextureId, newId);
-                //MyTextureFrame textureFrame = copyToNew(mInputSurfaceTextureId, sourceFrame.mFrameTemp[0]);
-                //String outCopy = "/sdcard/VideoEdit/pic/pic_tex_fbo_" + saveTextureIndex + ".png";
-                // glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-                // LVTextureSave.saveToPngFrameBuff(textureFrame.texId, textureFrame.fboId,720, 1280, outCopy);
-//                glBindTexture(GL_TEXTURE_2D, 0);
-//                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//                textureFrame.width = 720;
-//                textureFrame.height = 1280;
-//                textureFrame.nowTimeStamp = nowTimeStamp;
-//                try {
-//                    texQueue.put(textureFrame);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
             } else if (mOutputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
 
             } else if (mOutputIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
