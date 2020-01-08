@@ -151,6 +151,9 @@ public class EglHelper {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     public void setPresentationTime(EGLSurface surface, long time){
+        //eglPresentationTimeANDROID作用，
+        //在swapBuffer之前调用，提交当前帧的想要的显示时间戳，至于时间戳的具体含义，在不同的场景中可能会有不同的表达
+        //参考：http://ragnraok.github.io/surface_display_lag.html
         EGLExt.eglPresentationTimeANDROID(mEGLDisplay,surface,time);
     }
 
